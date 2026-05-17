@@ -447,6 +447,31 @@
         margin-top: 14px;
       }
 
+      .priority-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .priority {
+        display: grid;
+        gap: 6px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #000;
+        padding: 12px;
+      }
+
+      .priority strong {
+        font-size: 13px;
+      }
+
+      .priority span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
       .finding {
         border: 1px solid var(--line);
         border-radius: 8px;
@@ -491,11 +516,17 @@
         line-height: 1.5;
       }
 
+      .coverage,
       .clauses,
       .questions {
         display: grid;
         gap: 8px;
         margin-top: 14px;
+      }
+
+      .finding p strong {
+        color: var(--text);
+        font-weight: 650;
       }
 
       .mini {
@@ -586,11 +617,11 @@
                 id="fileInput"
                 type="file"
                 multiple
-                accept=".pdf,.docx,.txt,.md,.rtf,.zip,image/jpeg,image/png,image/webp,image/heic,image/heif"
+                accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.xml,.eml,.csv,.xls,.xlsx,.ods,.zip,image/jpeg,image/png,image/webp,image/heic,image/heif"
               />
               <span>
                 <strong data-i18n="dropTitle">Vyberte nebo přetáhněte soubory</strong>
-                <span data-i18n="dropHint">PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP</span>
+                <span data-i18n="dropHint">PDF, DOC(X), ODT, RTF, XLSX, ZIP, JPG, PNG</span>
               </span>
             </label>
 
@@ -659,6 +690,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.1/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
       const copy = {
@@ -672,7 +704,7 @@
           textLabel: "Text smlouvy",
           textPlaceholder: "Vložte text smlouvy...",
           dropTitle: "Vyberte nebo přetáhněte soubory",
-          dropHint: "PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP",
+          dropHint: "PDF, DOC(X), ODT, RTF, XLSX, ZIP, JPG, PNG",
           photoTitle: "Vyfotit smlouvu",
           photoHint: "OCR běží v prohlížeči, může být pomalejší.",
           typeLabel: "Typ smlouvy",
@@ -708,14 +740,21 @@
           type: "Typ",
           chars: "Znaky",
           findings: "Rizika",
+          priorities: "Nejdřív řešit",
+          coverage: "Kontrola obsahu",
           clauses: "Klauzule",
           questions: "Otázky",
+          whyItMatters: "Proč to řešit",
+          suggestedAction: "Doporučený krok",
+          missing: "Chybí / ověřit",
+          present: "Nalezeno",
           download: "Stáhnout report",
           noFindings: "Nenašel jsem výrazné rizikové signály. I tak smlouvu zkontrolujte podle kontextu.",
+          noPriorities: "Nejdřív ověřte údaje stran, cenu, ukončení, odpovědnost a podpisy.",
           summaryLow: "Text neobsahuje mnoho běžných varovných signálů.",
           summaryMedium: "Text obsahuje několik bodů, které je vhodné před podpisem vyjasnit.",
           summaryHigh: "Text obsahuje silné rizikové signály. Před podpisem doporučuji lidskou kontrolu.",
-          localMethod: "rules + local extraction"
+          localMethod: "lokální pravidla + extrakce"
         },
         en: {
           tagline: "Local contract orientation check",
@@ -727,7 +766,7 @@
           textLabel: "Contract text",
           textPlaceholder: "Paste contract text...",
           dropTitle: "Choose or drop files",
-          dropHint: "PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP",
+          dropHint: "PDF, DOC(X), ODT, RTF, XLSX, ZIP, JPG, PNG",
           photoTitle: "Take a contract photo",
           photoHint: "OCR runs in the browser and can be slower.",
           typeLabel: "Contract type",
@@ -763,10 +802,17 @@
           type: "Type",
           chars: "Characters",
           findings: "Findings",
+          priorities: "Fix first",
+          coverage: "Content check",
           clauses: "Clauses",
           questions: "Questions",
+          whyItMatters: "Why it matters",
+          suggestedAction: "Suggested action",
+          missing: "Missing / verify",
+          present: "Found",
           download: "Download report",
           noFindings: "No strong risk signals found. Still review the contract in context.",
+          noPriorities: "First verify parties, price, termination, liability, and signatures.",
           summaryLow: "The text does not contain many common warning signals.",
           summaryMedium: "The text contains several points worth clarifying before signing.",
           summaryHigh: "The text contains strong risk signals. Human review is recommended before signing.",
@@ -855,6 +901,30 @@
           en: ["Payment", "Check due date, sanctions, currency, VAT, and invoicing terms."]
         },
         {
+          id: "indemnity",
+          area: "liability",
+          level: 16,
+          pattern: /od[šs]kodn[íi]|nahrad[íi]\s+ve[šs]ker|indemnif|hold\s+harmless|defend\s+and\s+hold/gi,
+          cs: ["Odškodnění", "Zúžte rozsah odškodnění na zaviněné a prokazatelné škody."],
+          en: ["Indemnity", "Limit indemnity to proven losses caused by the responsible party."]
+        },
+        {
+          id: "non-compete",
+          area: "restriction",
+          level: 15,
+          pattern: /konkuren[čc]n[íi]\s+dolo[žz]k|z[aá]kaz\s+konkurence|non[-\s]?compete|exclusiv(e|ity)/gi,
+          cs: ["Omezení konkurence / exkluzivita", "Zkontrolujte dobu, území, kompenzaci a přiměřenost omezení."],
+          en: ["Non-compete / exclusivity", "Check duration, territory, compensation, and proportionality."]
+        },
+        {
+          id: "personal-guarantee",
+          area: "security",
+          level: 17,
+          pattern: /ru[čc]en[íi]|sm[eě]nka|zaji[šs]t[eě]n[íi]|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
+          cs: ["Ručení nebo zajištění", "Ověřte, kdo ručí, do jaké výše a kdy závazek zaniká."],
+          en: ["Guarantee or security", "Verify who guarantees, the cap, and when the security ends."]
+        },
+        {
           id: "blank",
           area: "completeness",
           level: 15,
@@ -902,7 +972,10 @@
         });
         if (!state.lastReport) $("reportMeta").textContent = "-";
         renderFiles();
-        if (state.lastReport) renderReport(state.lastReport);
+        if (state.lastReport) {
+          state.lastReport = analyze(state.lastReport.text);
+          renderReport(state.lastReport);
+        }
         if (!state.processing) $("analyzeBtn").textContent = t("analyze");
       }
 
@@ -977,8 +1050,76 @@
         return String(fileName).toLowerCase().split(".").pop() || "";
       }
 
+      function stripMarkup(value) {
+        const doc = new DOMParser().parseFromString(String(value || ""), "text/html");
+        return cleanText(doc.body?.textContent || String(value).replace(/<[^>]+>/g, " "));
+      }
+
+      function decodeBuffer(buffer, encoding) {
+        try {
+          return new TextDecoder(encoding, { fatal: false }).decode(buffer);
+        } catch {
+          return "";
+        }
+      }
+
+      function readableScore(value) {
+        const cleaned = String(value || "").replace(/[^\p{L}\p{N}\s.,;:!?()[\]\/\-+%§]/gu, " ");
+        const words = cleaned.match(/[\p{L}\p{N}]{2,}/gu) || [];
+        const noise = (cleaned.match(/[�\u0000-\u0008\u000b\u000c\u000e-\u001f]/g) || []).length;
+        return words.length * 4 - noise * 10 + cleanText(cleaned).length / 120;
+      }
+
+      function bestTextFromBuffer(buffer) {
+        const candidates = ["utf-8", "windows-1250", "windows-1252", "utf-16le"]
+          .map((encoding) => decodeBuffer(buffer, encoding))
+          .filter(Boolean)
+          .map((text) => ({
+            text: cleanText(
+              text
+                .replace(/[^\p{L}\p{N}\s.,;:!?()[\]\/\-+%§]/gu, " ")
+                .replace(/\s{2,}/g, " ")
+            ),
+            score: readableScore(text)
+          }))
+          .sort((a, b) => b.score - a.score);
+
+        return candidates[0]?.text || "";
+      }
+
       async function readTextFile(file) {
         return cleanText(await file.text());
+      }
+
+      async function readHtmlFile(file) {
+        return stripMarkup(await file.text());
+      }
+
+      function stripRtf(value) {
+        return cleanText(
+          String(value || "")
+            .replace(/\\'[0-9a-fA-F]{2}/g, " ")
+            .replace(/\\[a-z]+-?\d* ?/gi, " ")
+            .replace(/[{}]/g, " ")
+        );
+      }
+
+      async function readRtfFile(file) {
+        return stripRtf(await file.text());
+      }
+
+      async function readLegacyDoc(file) {
+        return bestTextFromBuffer(await file.arrayBuffer());
+      }
+
+      async function readSpreadsheet(file) {
+        if (!window.XLSX) throw new Error("Spreadsheet parser is not loaded.");
+        const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const parts = workbook.SheetNames.slice(0, 12).map((name) => {
+          const sheet = workbook.Sheets[name];
+          return window.XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+        });
+        return cleanText(parts.join("\n\n"));
       }
 
       async function readPdf(file) {
@@ -1003,6 +1144,14 @@
           arrayBuffer: await file.arrayBuffer()
         });
         return cleanText(result.value || "");
+      }
+
+      async function readOdt(file) {
+        if (!window.JSZip) throw new Error("ODT parser is not loaded.");
+        const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+        const content = zip.file("content.xml");
+        if (!content) return "";
+        return stripMarkup(await content.async("text"));
       }
 
       async function readImage(file) {
@@ -1032,11 +1181,23 @@
 
         for (const entry of entries) {
           const ext = extension(entry.name);
-          if (["txt", "md", "rtf", "csv"].includes(ext)) {
+          if (["txt", "md", "csv", "eml"].includes(ext)) {
             parts.push(await entry.async("text"));
+          } else if (ext === "rtf") {
+            parts.push(stripRtf(await entry.async("text")));
+          } else if (["html", "htm", "xml"].includes(ext)) {
+            parts.push(stripMarkup(await entry.async("text")));
+          } else if (ext === "doc") {
+            parts.push(bestTextFromBuffer(await entry.async("arraybuffer")));
+          } else if (["xls", "xlsx", "ods"].includes(ext)) {
+            const blob = new File([await entry.async("arraybuffer")], entry.name);
+            parts.push(await readSpreadsheet(blob));
           } else if (ext === "docx") {
             const blob = new File([await entry.async("arraybuffer")], entry.name);
             parts.push(await readDocx(blob));
+          } else if (ext === "odt") {
+            const blob = new File([await entry.async("arraybuffer")], entry.name);
+            parts.push(await readOdt(blob));
           } else if (ext === "pdf") {
             const blob = new File([await entry.async("arraybuffer")], entry.name, {
               type: "application/pdf"
@@ -1057,12 +1218,22 @@
             let extracted = "";
             if (file.size > 20 * 1024 * 1024) {
               failures.push(`${file.name}: >20 MB`);
-            } else if (["txt", "md", "rtf", "csv"].includes(ext)) {
+            } else if (["txt", "md", "csv", "eml"].includes(ext)) {
               extracted = await readTextFile(file);
+            } else if (ext === "rtf") {
+              extracted = await readRtfFile(file);
+            } else if (["html", "htm", "xml"].includes(ext)) {
+              extracted = await readHtmlFile(file);
+            } else if (ext === "doc") {
+              extracted = await readLegacyDoc(file);
+            } else if (["xls", "xlsx", "ods"].includes(ext)) {
+              extracted = await readSpreadsheet(file);
             } else if (ext === "pdf" || file.type === "application/pdf") {
               extracted = await readPdf(file);
             } else if (ext === "docx") {
               extracted = await readDocx(file);
+            } else if (ext === "odt") {
+              extracted = await readOdt(file);
             } else if (ext === "zip") {
               extracted = await readZip(file);
             } else if (file.type.startsWith("image/")) {
@@ -1153,6 +1324,173 @@
         return "general";
       }
 
+      function severityLabel(level) {
+        if (level >= 17) return state.lang === "cs" ? "vysoké" : "high";
+        if (level >= 13) return state.lang === "cs" ? "střední" : "medium";
+        return state.lang === "cs" ? "nižší" : "lower";
+      }
+
+      function whyForFinding(id) {
+        const map = {
+          penalty: {
+            cs: "Pokuta může zvýšit cenu chyby i u drobného porušení.",
+            en: "A penalty can make even a small breach expensive."
+          },
+          "unlimited-liability": {
+            cs: "Bez limitu může odpovědnost přesáhnout hodnotu celé smlouvy.",
+            en: "Without a cap, liability can exceed the whole contract value."
+          },
+          "unilateral-change": {
+            cs: "Jedna strana může změnit pravidla bez skutečné kontroly druhé strany.",
+            en: "One party may change the rules without meaningful control by the other side."
+          },
+          termination: {
+            cs: "Nejasné ukončení komplikuje odchod ze smlouvy a plánování nákladů.",
+            en: "Unclear termination makes exit and cost planning harder."
+          },
+          "auto-renewal": {
+            cs: "Automatické prodloužení může vytvořit závazek, který uživatel nechtěl obnovit.",
+            en: "Automatic renewal can create a commitment the user did not intend to extend."
+          },
+          jurisdiction: {
+            cs: "Nevhodný soud nebo rozhodčí doložka může prodražit vymáhání práv.",
+            en: "The wrong court or arbitration clause can make enforcement costly."
+          },
+          ip: {
+            cs: "Nejasná práva k výsledku práce často blokují další použití nebo prodej.",
+            en: "Unclear rights to work product can block later use or sale."
+          },
+          "personal-data": {
+            cs: "U osobních údajů musí být jasný účel, role stran, bezpečnost a doba uchování.",
+            en: "Personal data needs clear purpose, roles, security, and retention."
+          },
+          payment: {
+            cs: "Nejasná cena nebo splatnost vede ke sporům o fakturaci a cash flow.",
+            en: "Unclear price or due date creates billing and cash-flow disputes."
+          },
+          indemnity: {
+            cs: "Široké odškodnění může přenést cizí škody na jednu stranu.",
+            en: "Broad indemnity can shift unrelated losses onto one party."
+          },
+          "non-compete": {
+            cs: "Omezení konkurence nebo exkluzivita může blokovat další práci či obchod.",
+            en: "Non-compete or exclusivity can block future work or business."
+          },
+          "personal-guarantee": {
+            cs: "Ručení může zasáhnout osobní majetek nebo závazky mimo hlavní smlouvu.",
+            en: "A guarantee can reach personal assets or obligations beyond the main deal."
+          },
+          blank: {
+            cs: "Prázdné pole může po podpisu změnit cenu, termín nebo rozsah závazku.",
+            en: "A blank field can later change price, timing, or scope."
+          }
+        };
+        return map[id]?.[state.lang] || (state.lang === "cs" ? "Bod může změnit praktické dopady smlouvy." : "This point can change the practical impact of the contract.");
+      }
+
+      function sectionDefinitions(contractType) {
+        const base = [
+          { id: "parties", required: true, cs: "Smluvní strany", en: "Parties", patterns: [/smluvn[íi]\s+stran|mezi|party|parties|between/i] },
+          { id: "subject", required: true, cs: "Předmět plnění", en: "Subject / scope", patterns: [/předm[eě]t|predmet|scope|subject|pln[eě]n[íi]|services|deliverables/i] },
+          { id: "price", required: true, cs: "Cena a platby", en: "Price and payment", patterns: [/cena|odm[eě]na|splatnost|faktur|payment|price|fee|invoice|rent|salary/i] },
+          { id: "term", required: true, cs: "Doba trvání / účinnost", en: "Term / effective date", patterns: [/doba\s+trv[aá]n[íi]|účinnost|ucinnost|platnost|term|duration|effective/i] },
+          { id: "termination", required: true, cs: "Ukončení", en: "Termination", patterns: [/ukon[čc]en|výpov|vypov|odstoupen|termination|notice|withdraw/i] },
+          { id: "liability", required: true, cs: "Odpovědnost a náhrada škody", en: "Liability and damages", patterns: [/odpov[eě]dnost|odpovednost|náhrada škody|nahrada skody|liability|damage/i] },
+          { id: "disputes", required: true, cs: "Právo a řešení sporů", en: "Law and disputes", patterns: [/rozhodn[eé]\s+pr[aá]vo|příslušn|prislusn|soud|jurisdiction|governing\s+law|dispute|court|arbitration/i] },
+          { id: "signatures", required: true, cs: "Podpisy / datum", en: "Signatures / date", patterns: [/podpis|podeps|datum|signature|signed|date/i] },
+          { id: "confidentiality", required: false, cs: "Mlčenlivost", en: "Confidentiality", patterns: [/ml[čc]enlivost|důvěrn|duvern|confidential|nda/i] },
+          { id: "personal-data", required: false, cs: "Osobní údaje", en: "Personal data", patterns: [/osobn[íi]\s+[úu]daj|gdpr|personal\s+data|privacy|data\s+processing/i] }
+        ];
+
+        const specific = {
+          lease: [
+            { id: "deposit", required: true, cs: "Kauce / jistota", en: "Deposit", patterns: [/kauce|jistota|deposit|security/i] },
+            { id: "handover", required: true, cs: "Předání a opravy", en: "Handover and repairs", patterns: [/před[aá]n|predan|opravy|údržba|udrzba|handover|repair|maintenance/i] }
+          ],
+          employment: [
+            { id: "role", required: true, cs: "Druh práce a místo", en: "Role and workplace", patterns: [/druh\s+pr[aá]ce|m[ií]sto\s+v[yý]konu|role|position|workplace/i] },
+            { id: "worktime", required: true, cs: "Pracovní doba", en: "Working time", patterns: [/pracovn[íi]\s+doba|working\s+time|hours/i] }
+          ],
+          nda: [
+            { id: "secret-definition", required: true, cs: "Definice důvěrných informací", en: "Definition of confidential information", patterns: [/důvěrn[ée]\s+informace|duvern[eé]\s+informace|confidential\s+information/i] },
+            { id: "exceptions", required: true, cs: "Výjimky z mlčenlivosti", en: "Confidentiality exclusions", patterns: [/výjimk|vyjimk|exclusion|exception|publicly\s+known/i] }
+          ],
+          service: [
+            { id: "acceptance", required: true, cs: "Předání a akceptace", en: "Delivery and acceptance", patterns: [/akceptac|před[aá]n|predan|acceptance|handover|delivery/i] },
+            { id: "change-requests", required: false, cs: "Změnové požadavky", en: "Change requests", patterns: [/zm[eě]nov|change\s+request|scope\s+change/i] }
+          ],
+          purchase: [
+            { id: "delivery", required: true, cs: "Dodání a vlastnictví", en: "Delivery and ownership", patterns: [/dod[aá]n|vlastnictv[íi]|delivery|ownership|title/i] },
+            { id: "warranty", required: true, cs: "Záruka / vady", en: "Warranty / defects", patterns: [/z[aá]ruk|vad|reklamac|warranty|defect|claim/i] }
+          ],
+          loan: [
+            { id: "repayment", required: true, cs: "Splátky a úrok", en: "Repayment and interest", patterns: [/spl[aá]tk|úrok|urok|repayment|interest/i] },
+            { id: "default", required: true, cs: "Prodlení a zesplatnění", en: "Default and acceleration", patterns: [/prodlen|zesplat|default|acceleration/i] }
+          ]
+        };
+
+        return [...base, ...(specific[contractType] || [])].slice(0, 12);
+      }
+
+      function buildCoverage(text, contractType) {
+        return sectionDefinitions(contractType).map((section) => ({
+          id: section.id,
+          label: section[state.lang],
+          required: section.required,
+          present: section.patterns.some((pattern) => pattern.test(text))
+        }));
+      }
+
+      function buildPriorities(findings, coverage) {
+        const priorities = findings.slice(0, 3).map((finding) => ({
+          title: finding.title,
+          detail: finding.recommendation
+        }));
+
+        coverage
+          .filter((item) => item.required && !item.present)
+          .slice(0, Math.max(0, 3 - priorities.length))
+          .forEach((item) => {
+            priorities.push({
+              title: `${t("missing")}: ${item.label}`,
+              detail:
+                state.lang === "cs"
+                  ? "Doplňte nebo ověřte tuto část před podpisem."
+                  : "Add or verify this section before signing."
+            });
+          });
+
+        if (!priorities.length) {
+          priorities.push({
+            title: state.lang === "cs" ? "Rychlá ruční kontrola" : "Quick manual check",
+            detail: t("noPriorities")
+          });
+        }
+
+        return priorities;
+      }
+
+      function buildProfessionalSummary(risk, findings, coverage) {
+        const base = t(`summary${risk[0].toUpperCase()}${risk.slice(1)}`);
+        const missingCount = coverage.filter((item) => item.required && !item.present).length;
+        if (findings[0] && missingCount) {
+          return state.lang === "cs"
+            ? `${base} Priorita: ${findings[0].title}. Chybí ověřit ${missingCount} částí.`
+            : `${base} Priority: ${findings[0].title}. ${missingCount} sections need verification.`;
+        }
+        if (findings[0]) {
+          return state.lang === "cs"
+            ? `${base} Priorita: ${findings[0].title}.`
+            : `${base} Priority: ${findings[0].title}.`;
+        }
+        if (missingCount) {
+          return state.lang === "cs"
+            ? `${base} Chybí ověřit ${missingCount} částí.`
+            : `${base} ${missingCount} sections need verification.`;
+        }
+        return base;
+      }
+
       function analyze(text) {
         const normalized = cleanText(text).slice(0, 180000);
         const contractType = detectType(normalized);
@@ -1170,13 +1508,18 @@
               level: rule.level,
               title,
               recommendation,
+              why: whyForFinding(rule.id),
+              severity: severityLabel(rule.level),
               quote: excerpt(normalized, matches[0].index || 0),
               confidence: Math.min(0.92, 0.56 + matches.length * 0.08)
             });
           }
         }
 
-        const penalty = findings.reduce((sum, item) => sum + item.level, 0);
+        findings.sort((a, b) => b.level - a.level);
+        const coverage = buildCoverage(normalized, contractType);
+        const missingRequired = coverage.filter((item) => item.required && !item.present).length;
+        const penalty = findings.reduce((sum, item) => sum + item.level, 0) + missingRequired * 4;
         const score = Math.max(0, Math.min(100, 100 - penalty));
         const risk = score < 55 ? "high" : score < 78 ? "medium" : "low";
         const confidence = Math.min(
@@ -1184,22 +1527,25 @@
           0.52 + Math.min(normalized.length, 20000) / 100000 + findings.length * 0.035
         );
         const clauses = findClauses(normalized);
-        const questions = buildQuestions(findings, contractType);
+        const priorities = buildPriorities(findings, coverage);
+        const questions = buildQuestions(findings, contractType, coverage);
 
         return {
           text: normalized,
           type: contractType,
           findings,
+          coverage,
+          priorities,
           clauses,
           questions,
           score,
           risk,
           confidence,
-          summary: t(`summary${risk[0].toUpperCase()}${risk.slice(1)}`)
+          summary: buildProfessionalSummary(risk, findings, coverage)
         };
       }
 
-      function buildQuestions(findings, contractType) {
+      function buildQuestions(findings, contractType, coverage) {
         const base =
           state.lang === "cs"
             ? [
@@ -1219,6 +1565,17 @@
         if (contractType === "employment") {
           base.unshift(state.lang === "cs" ? "Sedí pracovní doba, mzda a konkurenční omezení?" : "Do working time, salary, and non-compete limits fit?");
         }
+
+        coverage
+          .filter((item) => item.required && !item.present)
+          .slice(0, 2)
+          .forEach((item) => {
+            base.push(
+              state.lang === "cs"
+                ? `Kde je ve smlouvě upraveno: ${item.label}?`
+                : `Where does the contract cover: ${item.label}?`
+            );
+          });
 
         findings.slice(0, 2).forEach((finding) => {
           base.push(
@@ -1242,6 +1599,17 @@
         $("result").classList.remove("hidden");
         $("reportMeta").textContent = `${t("done")} · ${t("localMethod")}`;
 
+        const priorities = report.priorities
+          .map(
+            (priority) => `
+              <article class="priority">
+                <strong>${escapeHtml(priority.title)}</strong>
+                <span>${escapeHtml(priority.detail)}</span>
+              </article>
+            `
+          )
+          .join("");
+
         const findings =
           report.findings.length > 0
             ? report.findings
@@ -1250,15 +1618,54 @@
               <article class="finding">
                 <div class="finding-top">
                   <h3>${escapeHtml(finding.title)}</h3>
-                  <span class="badge">${Math.round(finding.confidence * 100)}%</span>
+                  <span class="badge">${escapeHtml(finding.severity)} · ${Math.round(finding.confidence * 100)}%</span>
                 </div>
-                <p>${escapeHtml(finding.recommendation)}</p>
+                <p><strong>${escapeHtml(t("whyItMatters"))}:</strong> ${escapeHtml(finding.why)}</p>
+                <p><strong>${escapeHtml(t("suggestedAction"))}:</strong> ${escapeHtml(finding.recommendation)}</p>
                 <div class="quote">${escapeHtml(finding.quote)}</div>
               </article>
             `
                 )
                 .join("")
             : `<div class="mini">${escapeHtml(t("noFindings"))}</div>`;
+
+        const requiredCoverage = report.coverage.filter((item) => item.required);
+        const foundRequired = requiredCoverage.filter((item) => item.present).length;
+        const missingCoverage = requiredCoverage.filter((item) => !item.present);
+        const optionalFound = report.coverage.filter((item) => !item.required && item.present).slice(0, 3);
+        const coverageRows = [
+          {
+            label: `${t("present")}: ${foundRequired}/${requiredCoverage.length}`,
+            detail:
+              state.lang === "cs"
+                ? "Základní části smlouvy nalezené v textu."
+                : "Core contract sections found in the text."
+          },
+          ...missingCoverage.slice(0, 6).map((item) => ({
+            label: `${t("missing")}: ${item.label}`,
+            detail:
+              state.lang === "cs"
+                ? "Před podpisem ověřte nebo doplňte."
+                : "Verify or add before signing."
+          })),
+          ...optionalFound.map((item) => ({
+            label: `${t("present")}: ${item.label}`,
+            detail:
+              state.lang === "cs"
+                ? "Doplňková část nalezená v textu."
+                : "Additional section found in the text."
+          }))
+        ];
+        const coverage = coverageRows
+          .map(
+            (item) => `
+              <div class="mini">
+                <strong>${escapeHtml(item.label)}</strong>
+                ${escapeHtml(item.detail)}
+              </div>
+            `
+          )
+          .join("");
 
         $("result").innerHTML = `
           <div class="score">
@@ -1275,8 +1682,14 @@
             <div><span>${escapeHtml(t("chars"))}</span><strong>${report.text.length.toLocaleString()}</strong></div>
           </div>
 
+          <h3 class="section-title">${escapeHtml(t("priorities"))}</h3>
+          <div class="priority-list">${priorities}</div>
+
           <h3 class="section-title">${escapeHtml(t("findings"))}</h3>
           <div class="findings">${findings}</div>
+
+          <h3 class="section-title">${escapeHtml(t("coverage"))}</h3>
+          <div class="coverage">${coverage}</div>
 
           <h3 class="section-title">${escapeHtml(t("clauses"))}</h3>
           <div class="clauses">
@@ -1310,8 +1723,17 @@
           "",
           report.summary,
           "",
+          t("priorities"),
+          ...report.priorities.map((priority) => `- ${priority.title}: ${priority.detail}`),
+          "",
           t("findings"),
-          ...report.findings.map((finding) => `- ${finding.title}: ${finding.recommendation}`),
+          ...report.findings.map(
+            (finding) =>
+              `- ${finding.title} (${finding.severity}, ${Math.round(finding.confidence * 100)}%): ${finding.recommendation}`
+          ),
+          "",
+          t("coverage"),
+          ...report.coverage.map((item) => `- ${item.present ? t("present") : t("missing")}: ${item.label}`),
           "",
           t("questions"),
           ...report.questions.map((question) => `- ${question}`),
