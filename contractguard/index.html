@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="AI ContractGuard checks contract text and files locally in your browser. Orientation only, not legal advice."
+    />
+    <title>AI ContractGuard | Audicore</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #030303;
+        --panel: #080808;
+        --panel-2: #0d0d0d;
+        --line: #242424;
+        --line-strong: #3a3a3a;
+        --text: #f7f7f7;
+        --muted: #9a9a9a;
+        --soft: #626262;
+        --danger: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .shell {
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        max-width: 1180px;
+        margin: 0 auto 14px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .mark {
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .brand span {
+        display: none;
+        color: var(--soft);
+        font-size: 12px;
+      }
+
+      .lang {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .lang button {
+        height: 30px;
+        min-width: 42px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .lang button.active {
+        background: var(--text);
+        color: #000;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .panel-head {
+        min-height: 54px;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .panel-head h1,
+      .panel-head h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .panel-head p {
+        margin: 0;
+        color: var(--soft);
+        font-size: 12px;
+      }
+
+      .panel-body {
+        padding: 14px;
+      }
+
+      .modes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+      }
+
+      .modes button {
+        height: 38px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .modes button.active {
+        background: var(--text);
+        color: #000;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      label,
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      textarea,
+      select,
+      input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        color: var(--text);
+        outline: 0;
+      }
+
+      textarea:focus,
+      select:focus,
+      input[type="text"]:focus {
+        border-color: var(--text);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+      }
+
+      textarea {
+        min-height: 260px;
+        resize: vertical;
+        padding: 12px;
+        line-height: 1.55;
+        font-size: 14px;
+      }
+
+      select,
+      input[type="text"] {
+        height: 40px;
+        padding: 0 10px;
+      }
+
+      .drop {
+        margin-top: 12px;
+        min-height: 152px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        background: #000;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        text-align: center;
+      }
+
+      .drop.drag {
+        border-color: var(--text);
+        background: #090909;
+      }
+
+      .drop strong {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .drop span {
+        display: block;
+        margin-top: 8px;
+        color: var(--soft);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .drop input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+      }
+
+      .file-list {
+        display: grid;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .file-row,
+      .notice,
+      .status {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        padding: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .file-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .file-row span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text);
+      }
+
+      .controls {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        padding: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .check input {
+        margin-top: 2px;
+        accent-color: #fff;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .btn {
+        height: 42px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .btn.primary {
+        border-color: var(--text);
+        background: var(--text);
+        color: #000;
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        border-color: var(--line);
+        background: #111;
+        color: #555;
+      }
+
+      .result-empty {
+        min-height: 560px;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: var(--soft);
+        text-align: center;
+        padding: 24px;
+        line-height: 1.5;
+      }
+
+      .score {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .score-ring {
+        width: 86px;
+        height: 86px;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .score h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .score p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .meta div {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        padding: 10px;
+      }
+
+      .meta span {
+        display: block;
+        color: var(--soft);
+        font-size: 11px;
+      }
+
+      .meta strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 13px;
+      }
+
+      .findings {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .finding {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        padding: 12px;
+      }
+
+      .finding-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .finding h3 {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .finding p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .quote {
+        margin-top: 10px;
+        border-left: 1px solid var(--line-strong);
+        padding-left: 10px;
+        color: var(--soft);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .clauses,
+      .questions {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #000;
+        padding: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .mini strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .section-title {
+        margin: 18px 0 8px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (min-width: 760px) {
+        .brand span {
+          display: block;
+        }
+
+        .grid {
+          grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+        }
+
+        .actions {
+          grid-template-columns: 1fr auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="mark">A</div>
+          <div>
+            <strong>AI ContractGuard</strong>
+            <span data-i18n="tagline">Lokální orientační kontrola smluv</span>
+          </div>
+        </div>
+        <div class="lang" aria-label="Language">
+          <button type="button" class="active" data-lang="cs">CZ</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h1 data-i18n="inputTitle">Smlouva</h1>
+            <p data-i18n="privacy">Lokálně v prohlížeči</p>
+          </div>
+          <div class="panel-body">
+            <div class="modes" aria-label="Input mode">
+              <button type="button" class="active" data-mode="text" data-i18n="modeText">
+                Text
+              </button>
+              <button type="button" data-mode="file" data-i18n="modeFile">Soubor</button>
+              <button type="button" data-mode="photo" data-i18n="modePhoto">Foto</button>
+            </div>
+
+            <div id="textMode" class="field">
+              <label for="contractText" data-i18n="textLabel">Text smlouvy</label>
+              <textarea
+                id="contractText"
+                spellcheck="false"
+                data-i18n-placeholder="textPlaceholder"
+                placeholder="Vložte text smlouvy..."
+              ></textarea>
+            </div>
+
+            <label id="fileMode" class="drop hidden" for="fileInput">
+              <input
+                id="fileInput"
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt,.md,.rtf,.zip,image/jpeg,image/png,image/webp,image/heic,image/heif"
+              />
+              <span>
+                <strong data-i18n="dropTitle">Vyberte nebo přetáhněte soubory</strong>
+                <span data-i18n="dropHint">PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP</span>
+              </span>
+            </label>
+
+            <label id="photoMode" class="drop hidden" for="photoInput">
+              <input id="photoInput" type="file" accept="image/*" capture="environment" />
+              <span>
+                <strong data-i18n="photoTitle">Vyfotit smlouvu</strong>
+                <span data-i18n="photoHint">OCR běží v prohlížeči, může být pomalejší.</span>
+              </span>
+            </label>
+
+            <div id="fileList" class="file-list"></div>
+
+            <div class="controls">
+              <div class="field">
+                <label for="contractType" data-i18n="typeLabel">Typ smlouvy</label>
+                <select id="contractType">
+                  <option value="auto" data-i18n="typeAuto">Automaticky</option>
+                  <option value="employment" data-i18n="typeEmployment">Pracovní</option>
+                  <option value="lease" data-i18n="typeLease">Nájemní</option>
+                  <option value="nda" data-i18n="typeNda">NDA / mlčenlivost</option>
+                  <option value="service" data-i18n="typeService">Dílo / služby</option>
+                  <option value="purchase" data-i18n="typePurchase">Kupní</option>
+                  <option value="loan" data-i18n="typeLoan">Půjčka / úvěr</option>
+                  <option value="other" data-i18n="typeOther">Jiná</option>
+                </select>
+              </div>
+
+              <label class="check">
+                <input id="ack" type="checkbox" />
+                <span data-i18n="ack">
+                  Rozumím, že výstup je jen orientační automatická kontrola, ne právní rada.
+                </span>
+              </label>
+
+              <div class="notice" data-i18n="notice">
+                Soubory se neposílají na server. Citlivé smlouvy přesto kontrolujte opatrně.
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="analyzeBtn" type="button" class="btn primary" data-i18n="analyze">
+                Analyzovat zdarma
+              </button>
+              <button id="clearBtn" type="button" class="btn" data-i18n="clear">Vymazat</button>
+            </div>
+
+            <div id="status" class="status hidden"></div>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <div class="panel-head">
+            <h2 data-i18n="reportTitle">Report</h2>
+            <p id="reportMeta">-</p>
+          </div>
+          <div class="panel-body">
+            <div id="emptyResult" class="result-empty" data-i18n="empty">
+              Vložte smlouvu a spusťte analýzu.
+            </div>
+            <div id="result" class="hidden"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.1/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script>
+      const copy = {
+        cs: {
+          tagline: "Lokální orientační kontrola smluv",
+          inputTitle: "Smlouva",
+          privacy: "Lokálně v prohlížeči",
+          modeText: "Text",
+          modeFile: "Soubor",
+          modePhoto: "Foto",
+          textLabel: "Text smlouvy",
+          textPlaceholder: "Vložte text smlouvy...",
+          dropTitle: "Vyberte nebo přetáhněte soubory",
+          dropHint: "PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP",
+          photoTitle: "Vyfotit smlouvu",
+          photoHint: "OCR běží v prohlížeči, může být pomalejší.",
+          typeLabel: "Typ smlouvy",
+          typeAuto: "Automaticky",
+          typeEmployment: "Pracovní",
+          typeLease: "Nájemní",
+          typeNda: "NDA / mlčenlivost",
+          typeService: "Dílo / služby",
+          typePurchase: "Kupní",
+          typeLoan: "Půjčka / úvěr",
+          typeOther: "Jiná",
+          ack: "Rozumím, že výstup je jen orientační automatická kontrola, ne právní rada.",
+          notice: "Soubory se neposílají na server. Citlivé smlouvy přesto kontrolujte opatrně.",
+          analyze: "Analyzovat zdarma",
+          clear: "Vymazat",
+          reportTitle: "Report",
+          empty: "Vložte smlouvu a spusťte analýzu.",
+          extracting: "Čtu soubory...",
+          ocr: "Rozpoznávám text z obrázku...",
+          analyzing: "Analyzuji rizika...",
+          missingAck: "Nejdřív potvrďte orientační povahu výstupu.",
+          missingText: "Vložte text nebo vyberte soubor.",
+          tooLarge: "Text je příliš dlouhý. Zkraťte ho nebo rozdělte smlouvu.",
+          done: "Hotovo",
+          low: "Nízké riziko",
+          medium: "Střední riziko",
+          high: "Vysoké riziko",
+          score: "Skóre",
+          confidence: "Jistota",
+          type: "Typ",
+          chars: "Znaky",
+          findings: "Rizika",
+          clauses: "Klauzule",
+          questions: "Otázky",
+          download: "Stáhnout report",
+          noFindings: "Nenašel jsem výrazné rizikové signály. I tak smlouvu zkontrolujte podle kontextu.",
+          summaryLow: "Text neobsahuje mnoho běžných varovných signálů.",
+          summaryMedium: "Text obsahuje několik bodů, které je vhodné před podpisem vyjasnit.",
+          summaryHigh: "Text obsahuje silné rizikové signály. Před podpisem doporučuji lidskou kontrolu.",
+          localMethod: "rules + local extraction"
+        },
+        en: {
+          tagline: "Local contract orientation check",
+          inputTitle: "Contract",
+          privacy: "Local in browser",
+          modeText: "Text",
+          modeFile: "File",
+          modePhoto: "Photo",
+          textLabel: "Contract text",
+          textPlaceholder: "Paste contract text...",
+          dropTitle: "Choose or drop files",
+          dropHint: "PDF, DOCX, ZIP, TXT, JPG, PNG, WEBP",
+          photoTitle: "Take a contract photo",
+          photoHint: "OCR runs in the browser and can be slower.",
+          typeLabel: "Contract type",
+          typeAuto: "Automatic",
+          typeEmployment: "Employment",
+          typeLease: "Lease",
+          typeNda: "NDA / confidentiality",
+          typeService: "Work / services",
+          typePurchase: "Purchase",
+          typeLoan: "Loan / credit",
+          typeOther: "Other",
+          ack: "I understand this is automated orientation only, not legal advice.",
+          notice: "Files are not uploaded to a server. Still handle sensitive contracts carefully.",
+          analyze: "Analyze free",
+          clear: "Clear",
+          reportTitle: "Report",
+          empty: "Paste a contract and run the analysis.",
+          extracting: "Reading files...",
+          ocr: "Recognizing image text...",
+          analyzing: "Analyzing risks...",
+          missingAck: "Confirm that the output is orientation only first.",
+          missingText: "Paste text or choose a file.",
+          tooLarge: "The text is too long. Shorten it or split the contract.",
+          done: "Done",
+          low: "Low risk",
+          medium: "Medium risk",
+          high: "High risk",
+          score: "Score",
+          confidence: "Confidence",
+          type: "Type",
+          chars: "Characters",
+          findings: "Findings",
+          clauses: "Clauses",
+          questions: "Questions",
+          download: "Download report",
+          noFindings: "No strong risk signals found. Still review the contract in context.",
+          summaryLow: "The text does not contain many common warning signals.",
+          summaryMedium: "The text contains several points worth clarifying before signing.",
+          summaryHigh: "The text contains strong risk signals. Human review is recommended before signing.",
+          localMethod: "rules + local extraction"
+        }
+      };
+
+      const riskRules = [
+        {
+          id: "penalty",
+          area: "sanctions",
+          level: 18,
+          pattern: /smluvn[íi]\s+pokut|contractual\s+penalt|penalt(y|ies)|sankc|fine/gi,
+          cs: ["Smluvní pokuta", "Ověřte výši, strop a situace, kdy pokuta vzniká."],
+          en: ["Contractual penalty", "Check amount, cap, and exact trigger conditions."]
+        },
+        {
+          id: "unlimited-liability",
+          area: "liability",
+          level: 22,
+          pattern:
+            /bez\s+omezen[íi]|neomezen[aá]\s+odpov[eě]dnost|unlimited\s+liability|all\s+damages|vešker[eé]\s+škody/gi,
+          cs: ["Neomezená odpovědnost", "Zvažte limit odpovědnosti a vyloučení nepřímých škod."],
+          en: ["Unlimited liability", "Consider a liability cap and exclusion of indirect damages."]
+        },
+        {
+          id: "unilateral-change",
+          area: "changes",
+          level: 16,
+          pattern:
+            /jednostrann[eě]\s+(zm[eě]n|upravit)|unilaterally\s+(change|amend)|sole\s+discretion/gi,
+          cs: ["Jednostranná změna", "Doplňte souhlas, oznámení a možnost ukončení při změně."],
+          en: ["Unilateral change", "Add consent, notice, and exit right for changes."]
+        },
+        {
+          id: "termination",
+          area: "termination",
+          level: 14,
+          pattern:
+            /výpov[eě]dn[íi]\s+lh[uů]ta\s+nen[íi]|without\s+notice|immediate\s+termination|terminate\s+at\s+any\s+time/gi,
+          cs: ["Ukončení smlouvy", "Zkontrolujte výpovědní lhůtu, důvody a následky ukončení."],
+          en: ["Termination", "Check notice period, grounds, and consequences of termination."]
+        },
+        {
+          id: "auto-renewal",
+          area: "renewal",
+          level: 12,
+          pattern:
+            /automatick[eé]\s+prodlou[žz]en[íi]|automatic\s+renewal|auto[-\s]?renew|renews\s+automatically/gi,
+          cs: ["Automatické prodloužení", "Ověřte datum, upozornění a jednoduchý způsob odmítnutí."],
+          en: ["Automatic renewal", "Check date, notice, and a simple opt-out path."]
+        },
+        {
+          id: "jurisdiction",
+          area: "disputes",
+          level: 13,
+          pattern:
+            /rozhod[čc][íi]\s+dolo[žz]k|arbitration|jurisdiction|governing\s+law|p[řr][íi]slu[šs]n[ýy]\s+soud/gi,
+          cs: ["Řešení sporů", "Ověřte právo, soud/arbitráž a praktické náklady sporu."],
+          en: ["Dispute forum", "Check governing law, court/arbitration, and practical dispute cost."]
+        },
+        {
+          id: "ip",
+          area: "IP",
+          level: 13,
+          pattern:
+            /du[šs]evn[íi]\s+vlastnictv[íi]|autorsk[eé]\s+pr[aá]vo|intellectual\s+property|copyright|work\s+product/gi,
+          cs: ["Duševní vlastnictví", "Ujasněte převod/licenci, rozsah užití a odměnu."],
+          en: ["Intellectual property", "Clarify assignment/license, usage scope, and compensation."]
+        },
+        {
+          id: "personal-data",
+          area: "data",
+          level: 12,
+          pattern:
+            /osobn[íi]\s+[úu]daj|gdpr|zpracov[aá]n[íi]\s+[úu]daj|personal\s+data|data\s+processing|privacy/gi,
+          cs: ["Osobní údaje", "Zkontrolujte účel, role stran, zabezpečení a dobu uchování."],
+          en: ["Personal data", "Check purpose, party roles, security, and retention period."]
+        },
+        {
+          id: "payment",
+          area: "payment",
+          level: 11,
+          pattern: /splatnost|faktur|late\s+payment|invoice|payment\s+term|úrok\s+z\s+prodlen[íi]/gi,
+          cs: ["Platby", "Ověřte splatnost, sankce, měnu, DPH a podmínky fakturace."],
+          en: ["Payment", "Check due date, sanctions, currency, VAT, and invoicing terms."]
+        },
+        {
+          id: "blank",
+          area: "completeness",
+          level: 15,
+          pattern: /_{3,}|XXX|TBD|doplnit|to\s+be\s+completed|\[\s*\]/gi,
+          cs: ["Prázdné nebo nedoplněné místo", "Před podpisem doplňte všechny údaje."],
+          en: ["Blank or incomplete field", "Complete all placeholders before signing."]
+        }
+      ];
+
+      const typePatterns = [
+        ["employment", /pracovn[íi]\s+smlouva|zam[eě]stnanec|employee|employment|salary|mzda/gi],
+        ["lease", /n[aá]jem|pronaj[íi]matel|n[aá]jemce|lease|landlord|tenant|rent/gi],
+        ["nda", /ml[čc]enlivost|d[uů]v[eě]rn|confidential|non[-\s]?disclosure|nda/gi],
+        ["service", /smlouva\s+o\s+d[íi]lo|dodavatel|objednatel|service|work\s+order|contractor/gi],
+        ["purchase", /kupn[íi]\s+smlouva|prod[aá]vaj[íi]c[íi]|kupuj[íi]c[íi]|purchase|seller|buyer/gi],
+        ["loan", /p[uů]j[čc]ka|[úu]v[eě]r|dlu[žz]n[íi]k|v[eě][řr]itel|loan|borrower|lender/gi]
+      ];
+
+      const state = {
+        lang: "cs",
+        mode: "text",
+        files: [],
+        extractedText: "",
+        lastReport: null
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      function t(key) {
+        return copy[state.lang][key] || key;
+      }
+
+      function setLanguage(lang) {
+        state.lang = lang;
+        document.documentElement.lang = lang;
+        document.querySelectorAll("[data-lang]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.lang === lang);
+        });
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          node.textContent = t(node.dataset.i18n);
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+          node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder));
+        });
+        if (!state.lastReport) $("reportMeta").textContent = "-";
+        renderFiles();
+        if (state.lastReport) renderReport(state.lastReport);
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        document.querySelectorAll("[data-mode]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.mode === mode);
+        });
+        $("textMode").classList.toggle("hidden", mode !== "text");
+        $("fileMode").classList.toggle("hidden", mode !== "file");
+        $("photoMode").classList.toggle("hidden", mode !== "photo");
+      }
+
+      function status(message, show = true) {
+        $("status").textContent = message;
+        $("status").classList.toggle("hidden", !show);
+      }
+
+      function formatBytes(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+      }
+
+      function renderFiles() {
+        const root = $("fileList");
+        root.innerHTML = "";
+        state.files.forEach((file) => {
+          const row = document.createElement("div");
+          row.className = "file-row";
+          row.innerHTML = `<span>${escapeHtml(file.name)}</span><span>${formatBytes(file.size)}</span>`;
+          root.appendChild(row);
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function cleanText(value) {
+        return String(value || "")
+          .replace(/\u0000/g, " ")
+          .replace(/[ \t]+\n/g, "\n")
+          .replace(/\n{4,}/g, "\n\n\n")
+          .replace(/[ \t]{2,}/g, " ")
+          .trim();
+      }
+
+      function extension(fileName) {
+        return String(fileName).toLowerCase().split(".").pop() || "";
+      }
+
+      async function readTextFile(file) {
+        return cleanText(await file.text());
+      }
+
+      async function readPdf(file) {
+        const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+        const pages = [];
+        const maxPages = Math.min(pdf.numPages, 80);
+        for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          const content = await page.getTextContent();
+          pages.push(content.items.map((item) => item.str || "").join(" "));
+        }
+        return cleanText(pages.join("\n\n"));
+      }
+
+      async function readDocx(file) {
+        if (!window.mammoth) throw new Error("DOCX parser is not loaded.");
+        const result = await window.mammoth.extractRawText({
+          arrayBuffer: await file.arrayBuffer()
+        });
+        return cleanText(result.value || "");
+      }
+
+      async function readImage(file) {
+        if (!window.Tesseract) throw new Error("OCR is not loaded.");
+        status(t("ocr"));
+        try {
+          const result = await window.Tesseract.recognize(file, "ces+eng", {
+            logger: () => {}
+          });
+          return cleanText(result?.data?.text || "");
+        } catch {
+          const result = await window.Tesseract.recognize(file, "eng", {
+            logger: () => {}
+          });
+          return cleanText(result?.data?.text || "");
+        }
+      }
+
+      async function readZip(file) {
+        if (!window.JSZip) throw new Error("ZIP parser is not loaded.");
+        const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+        const parts = [];
+        const entries = Object.values(zip.files)
+          .filter((entry) => !entry.dir)
+          .slice(0, 40);
+
+        for (const entry of entries) {
+          const ext = extension(entry.name);
+          if (["txt", "md", "rtf", "csv"].includes(ext)) {
+            parts.push(await entry.async("text"));
+          } else if (ext === "docx") {
+            const blob = new File([await entry.async("arraybuffer")], entry.name);
+            parts.push(await readDocx(blob));
+          } else if (ext === "pdf") {
+            const blob = new File([await entry.async("arraybuffer")], entry.name, {
+              type: "application/pdf"
+            });
+            parts.push(await readPdf(blob));
+          }
+        }
+
+        return cleanText(parts.join("\n\n"));
+      }
+
+      async function extractFiles(files) {
+        const parts = [];
+        for (const file of files) {
+          const ext = extension(file.name);
+          if (file.size > 20 * 1024 * 1024) {
+            parts.push("");
+          } else if (["txt", "md", "rtf", "csv"].includes(ext)) {
+            parts.push(await readTextFile(file));
+          } else if (ext === "pdf" || file.type === "application/pdf") {
+            parts.push(await readPdf(file));
+          } else if (ext === "docx") {
+            parts.push(await readDocx(file));
+          } else if (ext === "zip") {
+            parts.push(await readZip(file));
+          } else if (file.type.startsWith("image/")) {
+            parts.push(await readImage(file));
+          }
+        }
+        return cleanText(parts.join("\n\n"));
+      }
+
+      function detectType(text) {
+        const manual = $("contractType").value;
+        if (manual !== "auto") return manual;
+
+        let best = ["other", 0];
+        for (const [type, pattern] of typePatterns) {
+          const count = [...text.matchAll(pattern)].length;
+          if (count > best[1]) best = [type, count];
+        }
+        return best[0];
+      }
+
+      function typeLabel(type) {
+        const map = {
+          employment: t("typeEmployment"),
+          lease: t("typeLease"),
+          nda: t("typeNda"),
+          service: t("typeService"),
+          purchase: t("typePurchase"),
+          loan: t("typeLoan"),
+          other: t("typeOther")
+        };
+        return map[type] || map.other;
+      }
+
+      function excerpt(text, index) {
+        const start = Math.max(0, index - 90);
+        const end = Math.min(text.length, index + 150);
+        return cleanText(`${start > 0 ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`);
+      }
+
+      function findClauses(text) {
+        const chunks = text
+          .split(/\n\s*\n|(?=\b\d+[\).\s])|(?=\b[A-ZÁ-Ž][A-ZÁ-Ž ]{5,}\b)/)
+          .map(cleanText)
+          .filter((part) => part.length > 80)
+          .slice(0, 6);
+
+        return chunks.map((part) => {
+          const type = detectClauseType(part);
+          return {
+            type,
+            title: type,
+            excerpt: part.slice(0, 360)
+          };
+        });
+      }
+
+      function detectClauseType(value) {
+        if (/splatnost|payment|invoice|faktur/i.test(value)) return "payment";
+        if (/odpov[eě]dnost|liability|damage/i.test(value)) return "liability";
+        if (/ml[čc]enlivost|confidential|nda/i.test(value)) return "confidentiality";
+        if (/ukon[čc]en|výpov[eě]|termination/i.test(value)) return "termination";
+        if (/osobn[íi]\s+[úu]daj|gdpr|personal\s+data/i.test(value)) return "data";
+        return "general";
+      }
+
+      function analyze(text) {
+        const normalized = cleanText(text).slice(0, 180000);
+        const contractType = detectType(normalized);
+        const findings = [];
+        const seen = new Set();
+
+        for (const rule of riskRules) {
+          const matches = [...normalized.matchAll(rule.pattern)];
+          if (matches.length && !seen.has(rule.id)) {
+            seen.add(rule.id);
+            const [title, recommendation] = rule[state.lang];
+            findings.push({
+              id: rule.id,
+              area: rule.area,
+              level: rule.level,
+              title,
+              recommendation,
+              quote: excerpt(normalized, matches[0].index || 0),
+              confidence: Math.min(0.92, 0.56 + matches.length * 0.08)
+            });
+          }
+        }
+
+        const penalty = findings.reduce((sum, item) => sum + item.level, 0);
+        const score = Math.max(0, Math.min(100, 100 - penalty));
+        const risk = score < 55 ? "high" : score < 78 ? "medium" : "low";
+        const confidence = Math.min(
+          0.94,
+          0.52 + Math.min(normalized.length, 20000) / 100000 + findings.length * 0.035
+        );
+        const clauses = findClauses(normalized);
+        const questions = buildQuestions(findings, contractType);
+
+        return {
+          text: normalized,
+          type: contractType,
+          findings,
+          clauses,
+          questions,
+          score,
+          risk,
+          confidence,
+          summary: t(`summary${risk[0].toUpperCase()}${risk.slice(1)}`)
+        };
+      }
+
+      function buildQuestions(findings, contractType) {
+        const base =
+          state.lang === "cs"
+            ? [
+                "Co přesně se stane při porušení smlouvy?",
+                "Jak lze smlouvu ukončit bez nepřiměřených nákladů?",
+                "Které přílohy a částky musí být doplněné před podpisem?"
+              ]
+            : [
+                "What exactly happens after a breach?",
+                "How can the contract be terminated without disproportionate cost?",
+                "Which attachments and amounts must be completed before signing?"
+              ];
+
+        if (contractType === "lease") {
+          base.unshift(state.lang === "cs" ? "Jak se řeší kauce, opravy a předání?" : "How are deposit, repairs, and handover handled?");
+        }
+        if (contractType === "employment") {
+          base.unshift(state.lang === "cs" ? "Sedí pracovní doba, mzda a konkurenční omezení?" : "Do working time, salary, and non-compete limits fit?");
+        }
+
+        findings.slice(0, 2).forEach((finding) => {
+          base.push(
+            state.lang === "cs"
+              ? `Je bod "${finding.title}" vyvážený pro obě strany?`
+              : `Is "${finding.title}" balanced for both parties?`
+          );
+        });
+        return [...new Set(base)].slice(0, 6);
+      }
+
+      function riskLabel(risk) {
+        if (risk === "high") return t("high");
+        if (risk === "medium") return t("medium");
+        return t("low");
+      }
+
+      function renderReport(report) {
+        state.lastReport = report;
+        $("emptyResult").classList.add("hidden");
+        $("result").classList.remove("hidden");
+        $("reportMeta").textContent = `${t("done")} · ${t("localMethod")}`;
+
+        const findings =
+          report.findings.length > 0
+            ? report.findings
+                .map(
+                  (finding) => `
+              <article class="finding">
+                <div class="finding-top">
+                  <h3>${escapeHtml(finding.title)}</h3>
+                  <span class="badge">${Math.round(finding.confidence * 100)}%</span>
+                </div>
+                <p>${escapeHtml(finding.recommendation)}</p>
+                <div class="quote">${escapeHtml(finding.quote)}</div>
+              </article>
+            `
+                )
+                .join("")
+            : `<div class="mini">${escapeHtml(t("noFindings"))}</div>`;
+
+        $("result").innerHTML = `
+          <div class="score">
+            <div class="score-ring">${report.score}</div>
+            <div>
+              <h3>${escapeHtml(riskLabel(report.risk))}</h3>
+              <p>${escapeHtml(report.summary)}</p>
+            </div>
+          </div>
+
+          <div class="meta">
+            <div><span>${escapeHtml(t("type"))}</span><strong>${escapeHtml(typeLabel(report.type))}</strong></div>
+            <div><span>${escapeHtml(t("confidence"))}</span><strong>${Math.round(report.confidence * 100)}%</strong></div>
+            <div><span>${escapeHtml(t("chars"))}</span><strong>${report.text.length.toLocaleString()}</strong></div>
+          </div>
+
+          <h3 class="section-title">${escapeHtml(t("findings"))}</h3>
+          <div class="findings">${findings}</div>
+
+          <h3 class="section-title">${escapeHtml(t("clauses"))}</h3>
+          <div class="clauses">
+            ${report.clauses
+              .map(
+                (clause) =>
+                  `<div class="mini"><strong>${escapeHtml(clause.title)}</strong>${escapeHtml(clause.excerpt)}</div>`
+              )
+              .join("") || `<div class="mini">-</div>`}
+          </div>
+
+          <h3 class="section-title">${escapeHtml(t("questions"))}</h3>
+          <div class="questions">
+            ${report.questions.map((question) => `<div class="mini">${escapeHtml(question)}</div>`).join("")}
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn" id="downloadReport">${escapeHtml(t("download"))}</button>
+          </div>
+        `;
+
+        $("downloadReport").addEventListener("click", () => downloadReport(report));
+      }
+
+      function downloadReport(report) {
+        const lines = [
+          "AI ContractGuard",
+          `${t("score")}: ${report.score}/100`,
+          `${t("type")}: ${typeLabel(report.type)}`,
+          `${t("confidence")}: ${Math.round(report.confidence * 100)}%`,
+          "",
+          report.summary,
+          "",
+          t("findings"),
+          ...report.findings.map((finding) => `- ${finding.title}: ${finding.recommendation}`),
+          "",
+          t("questions"),
+          ...report.questions.map((question) => `- ${question}`),
+          "",
+          state.lang === "cs" ? "Jen orientace. Nejde o právní radu." : "Orientation only. Not legal advice."
+        ];
+        const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "contractguard-report.txt";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function runAnalysis() {
+        if (!$("ack").checked) {
+          status(t("missingAck"));
+          return;
+        }
+
+        try {
+          status(state.files.length ? t("extracting") : t("analyzing"));
+          let text = $("contractText").value;
+          if (state.files.length) {
+            text = await extractFiles(state.files);
+            state.extractedText = text;
+            $("contractText").value = text;
+          }
+
+          text = cleanText(text);
+          if (!text) {
+            status(t("missingText"));
+            return;
+          }
+          if (text.length > 180000) {
+            status(t("tooLarge"));
+            return;
+          }
+
+          status(t("analyzing"));
+          const report = analyze(text);
+          renderReport(report);
+          status("", false);
+        } catch (error) {
+          status(error instanceof Error ? error.message : "Error");
+        }
+      }
+
+      function clearAll() {
+        state.files = [];
+        state.extractedText = "";
+        state.lastReport = null;
+        $("contractText").value = "";
+        $("fileInput").value = "";
+        $("photoInput").value = "";
+        $("ack").checked = false;
+        $("contractType").value = "auto";
+        $("result").classList.add("hidden");
+        $("emptyResult").classList.remove("hidden");
+        $("reportMeta").textContent = "-";
+        renderFiles();
+        status("", false);
+      }
+
+      document.querySelectorAll("[data-lang]").forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.lang));
+      });
+      document.querySelectorAll("[data-mode]").forEach((button) => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+
+      $("fileInput").addEventListener("change", (event) => {
+        state.files = Array.from(event.target.files || []);
+        renderFiles();
+      });
+      $("photoInput").addEventListener("change", (event) => {
+        state.files = Array.from(event.target.files || []);
+        renderFiles();
+      });
+
+      ["fileMode", "photoMode"].forEach((id) => {
+        const zone = $(id);
+        zone.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          zone.classList.add("drag");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+        zone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          zone.classList.remove("drag");
+          state.files = Array.from(event.dataTransfer.files || []);
+          renderFiles();
+        });
+      });
+
+      $("analyzeBtn").addEventListener("click", runAnalysis);
+      $("clearBtn").addEventListener("click", clearAll);
+
+      setLanguage("cs");
+    </script>
+  </body>
+</html>
