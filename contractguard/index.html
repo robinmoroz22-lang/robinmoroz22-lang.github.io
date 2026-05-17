@@ -453,6 +453,24 @@
         margin-top: 14px;
       }
 
+      .score-reasons,
+      .action-list,
+      .finding-group {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .finding-group + .finding-group {
+        margin-top: 16px;
+      }
+
+      .group-title {
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       .priority {
         display: grid;
         gap: 6px;
@@ -514,6 +532,11 @@
         color: var(--soft);
         font-size: 12px;
         line-height: 1.5;
+      }
+
+      .quote strong {
+        color: var(--muted);
+        font-weight: 650;
       }
 
       .coverage,
@@ -739,15 +762,24 @@
           confidence: "Jistota",
           type: "Typ",
           chars: "Znaky",
+          scoreReasons: "Proč takové skóre",
+          actionsTitle: "Co udělat",
           findings: "Detaily",
           priorities: "Top 3 věci",
-          coverage: "Chybí ověřit",
+          contentCheck: "Kontrola obsahu",
+          coverage: "Chybí ve smlouvě",
           clauses: "Relevantní části",
           questions: "Otázky pro protistranu",
+          confirmedFindings: "Nalezené riziko",
+          possibleFindings: "Možné riziko, ověřit",
+          noConfirmedFindings: "Bez jistého rizika podle lokálních pravidel.",
+          noPossibleFindings: "Žádné slabší signály k ověření.",
+          evidence: "Citace",
           whyItMatters: "Proč to řešit",
           suggestedAction: "Doporučený krok",
           missing: "Chybí / ověřit",
           present: "Nalezeno",
+          noScoreReasons: "Skóre snižují jen běžné kontroly úplnosti.",
           download: "Stáhnout report",
           noFindings: "Nenašel jsem výrazné rizikové signály. I tak smlouvu zkontrolujte podle kontextu.",
           noPriorities: "Nejdřív ověřte údaje stran, cenu, ukončení, odpovědnost a podpisy.",
@@ -801,15 +833,24 @@
           confidence: "Confidence",
           type: "Type",
           chars: "Characters",
+          scoreReasons: "Score drivers",
+          actionsTitle: "Actions",
           findings: "Details",
           priorities: "Top 3 items",
-          coverage: "Missing to verify",
+          contentCheck: "Content check",
+          coverage: "Missing in contract",
           clauses: "Relevant sections",
           questions: "Questions for the other side",
+          confirmedFindings: "Confirmed risk",
+          possibleFindings: "Possible risk, verify",
+          noConfirmedFindings: "No confirmed risk from local rules.",
+          noPossibleFindings: "No weaker signals to verify.",
+          evidence: "Evidence",
           whyItMatters: "Why it matters",
           suggestedAction: "Suggested action",
           missing: "Missing / verify",
           present: "Found",
+          noScoreReasons: "The score is only reduced by standard completeness checks.",
           download: "Download report",
           noFindings: "No strong risk signals found. Still review the contract in context.",
           noPriorities: "First verify parties, price, termination, liability, and signatures.",
@@ -1048,7 +1089,9 @@
 
       function maskSensitive(value) {
         return cleanText(String(value || ""))
+          .replace(/\b(Pronaj(?:í|i)matel|N(?:á|a)jemce|Landlord|Tenant)\s*:\s*([A-ZÁ-Ž][\p{L}.'-]+(?:\s+[A-ZÁ-Ž][\p{L}.'-]+){0,3})/gu, "$1: [osoba]")
           .replace(/\b([A-Z0-9._%+-])[A-Z0-9._%+-]*(@[A-Z0-9.-]+\.[A-Z]{2,})\b/gi, "$1***$2")
+          .replace(/\b([A-Z0-9._%+-])[A-Z0-9._%+-]*(@[A-Z0-9.-]+)(?=\.\.\.|[\s,;)]|$)/gi, "$1***$2")
           .replace(/\b\d{2}[0-5]\d[0-3]\d\/?\d{3,4}\b/g, "**/**/**/**")
           .replace(/\b\d{6}\/(?=\D|$)/g, "**/**/**/")
           .replace(/\b(\+420\s*)?\d{3}[\s.-]?\d{3}[\s.-]?\d{3}\b/g, "+420 *** *** ***");
@@ -1309,12 +1352,82 @@
       }
 
       function excerpt(text, index) {
-        const start = Math.max(0, index - 90);
-        const end = Math.min(text.length, index + 150);
-        return maskSensitive(`${start > 0 ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`);
+        const safeIndex = Math.max(0, Math.min(index || 0, text.length));
+        const before = text.slice(Math.max(0, safeIndex - 140), safeIndex);
+        const after = text.slice(safeIndex, Math.min(text.length, safeIndex + 190));
+        const isBreak = (value, position) => {
+          const char = value[position];
+          if (!/[.!?\n]/.test(char)) return false;
+          if (char === "." && /[\p{L}\p{N}]/u.test(value[position - 1] || "") && /[\p{L}\p{N}]/u.test(value[position + 1] || "")) return false;
+          return true;
+        };
+        let leftBreak = -1;
+        for (let i = before.length - 1; i >= 0; i -= 1) {
+          if (isBreak(before, i)) {
+            leftBreak = i;
+            break;
+          }
+        }
+        let rightBreak = -1;
+        for (let i = 0; i < after.length; i += 1) {
+          if (isBreak(after, i)) {
+            rightBreak = i;
+            break;
+          }
+        }
+        const start = Math.max(0, safeIndex - before.length + (leftBreak >= 0 ? leftBreak + 1 : 0));
+        const end = Math.min(text.length, safeIndex + (rightBreak >= 0 ? rightBreak + 1 : after.length));
+        let value = cleanText(text.slice(start, end));
+
+        if (value.length > 230) {
+          const shortStart = Math.max(0, safeIndex - 70);
+          const shortEnd = Math.min(text.length, safeIndex + 135);
+          value = `${shortStart > 0 ? "..." : ""}${cleanText(text.slice(shortStart, shortEnd))}${shortEnd < text.length ? "..." : ""}`;
+        } else {
+          value = `${start > 0 ? "..." : ""}${value}${end < text.length ? "..." : ""}`;
+        }
+
+        return maskSensitive(value);
       }
 
-      function findClauses(text) {
+      function findClauses(text, contractType) {
+        const folded = foldText(text);
+        const targeted =
+          contractType === "lease"
+            ? [
+                { type: "parties", pattern: /pronaj.{0,2}matel|n.?jemce|rodn.{0,2}\s+.{0,2}slo|email/ },
+                { type: "lease-unit", pattern: /byt|jednotka|sklep|balkon|podlahov|nemovitost/ },
+                { type: "payment", pattern: /n.?jemn.{0,4}\s+(cin|ve\s+vysi|je|za|mesic|uhrad|plat)|splatnost|rent/ },
+                { type: "services", pattern: /slu.{0,2}b|z.{0,2}loh|vodne|stocne|energie|teplo/ },
+                { type: "deposit", pattern: /kauce|jistota|deposit/ },
+                { type: "sanctions", pattern: /prodlen|sankc|pokut|\b1\s*%\s+z\s+dlu.{0,2}n/ },
+                { type: "handover", pattern: /pred.{0,3}n|p.{0,2}ed.{0,3}n|protokol|oprav|.{0,2}dr.{0,2}b/ },
+                { type: "use", pattern: /u.{0,2}iv|podnajem|podn.?jem|jine\s+osoby|souhlas\s+pronaj.{0,2}matele/ },
+                { type: "termination", pattern: /ukon.{0,3}en|vypov|v.{0,2}pov|odstoupen/ }
+              ]
+            : [
+                { type: "parties", pattern: /smluvn.?i?\s+stran|mezi|party|parties|between/ },
+                { type: "payment", pattern: /cena|odmena|splatnost|faktur|payment|price|fee|invoice/ },
+                { type: "termination", pattern: /ukon.{0,3}en|vypov|termination|notice|withdraw/ },
+                { type: "liability", pattern: /odpov.{0,4}dnost|nahrada\s+skody|liability|damage/ },
+                { type: "data", pattern: /osobn.{0,3}\s+.?daj|gdpr|personal\s+data|privacy/ }
+              ];
+
+        const found = [];
+        const used = new Set();
+        for (const item of targeted) {
+          const match = folded.match(item.pattern);
+          if (!match || used.has(item.type)) continue;
+          used.add(item.type);
+          found.push({
+            type: item.type,
+            title: clauseTitle(item.type),
+            excerpt: excerpt(text, match.index || 0)
+          });
+          if (found.length >= 5) return found;
+        }
+        if (found.length) return found;
+
         const chunks = text
           .split(/\n\s*\n|(?=\b\d+[\).\s])|(?=\b[A-ZÁ-Ž][A-ZÁ-Ž ]{5,}\b)/)
           .map(cleanText)
@@ -1328,7 +1441,7 @@
             return {
               type,
               title: clauseTitle(type),
-              excerpt: maskSensitive(part.slice(0, 320))
+              excerpt: excerpt(part, 0)
             };
           })
           .filter((clause) => {
@@ -1510,6 +1623,150 @@
         }));
       }
 
+      function findingCertainty(finding) {
+        if (finding.confidence >= 0.76 || finding.level >= 16) return "confirmed";
+        return "possible";
+      }
+
+      function certaintyLabel(certainty) {
+        return certainty === "confirmed" ? t("confirmedFindings") : t("possibleFindings");
+      }
+
+      function pointsLabel(points) {
+        if (state.lang !== "cs") return `${points} pts`;
+        if (points === 1) return "1 bod";
+        if (points >= 2 && points <= 4) return `${points} body`;
+        return `${points} bodů`;
+      }
+
+      function buildScoreReasons(findings, coverage) {
+        const reasons = findings.slice(0, 3).map((finding) => ({
+          label: finding.title,
+          detail:
+            state.lang === "cs"
+              ? `-${pointsLabel(finding.level)} · ${certaintyLabel(finding.certainty).toLowerCase()}`
+              : `-${pointsLabel(finding.level)} · ${certaintyLabel(finding.certainty).toLowerCase()}`
+        }));
+
+        coverage
+          .filter((item) => item.required && !item.present)
+          .slice(0, Math.max(0, 4 - reasons.length))
+          .forEach((item) => {
+            reasons.push({
+              label: state.lang === "cs" ? `Chybí: ${item.label}` : `Missing: ${item.label}`,
+              detail: state.lang === "cs" ? "-4 body · chybí ve smlouvě" : "-4 pts · missing section"
+            });
+          });
+
+        return reasons.slice(0, 4);
+      }
+
+      function leaseActionForMissing(id) {
+        const actions = {
+          deposit: {
+            cs: "Doplňte, kdy a v jaké výši se vrací kauce a za co ji může pronajímatel započíst.",
+            en: "Add when and how the deposit is returned and what the landlord may deduct."
+          },
+          services: {
+            cs: "Ověřte vyúčtování služeb, paušální platby a termín doplatku nebo přeplatku.",
+            en: "Verify service settlement, fixed payments, and timing of underpayment or overpayment."
+          },
+          rent: {
+            cs: "Zkontrolujte nájemné, splatnost, číslo účtu a co přesně je v ceně.",
+            en: "Check rent, due date, account number, and what is included in the price."
+          },
+          termination: {
+            cs: "Doplňte výpovědní lhůtu, důvody ukončení a povinnosti při odstěhování.",
+            en: "Add notice period, termination grounds, and move-out duties."
+          },
+          handover: {
+            cs: "Doplňte předávací protokol, stav bytu, vybavení a přílohy.",
+            en: "Add handover protocol, unit condition, equipment, and attachments."
+          },
+          repairs: {
+            cs: "Vyjasněte, kdo hradí opravy, běžnou údržbu a škody v bytě.",
+            en: "Clarify who pays for repairs, routine maintenance, and damage."
+          },
+          use: {
+            cs: "Ověřte pravidla pro další osoby v bytě, podnájem a souhlas pronajímatele.",
+            en: "Verify rules for other occupants, sublease, and landlord consent."
+          },
+          sanctions: {
+            cs: "Zkontrolujte sankce při prodlení, poplatky za vymáhání a možnost nápravy.",
+            en: "Check late-payment sanctions, collection fees, and cure period."
+          },
+          unit: {
+            cs: "Doplňte přesnou identifikaci bytu, sklepa, parkování a vybavení.",
+            en: "Add exact identification of the unit, storage, parking, and equipment."
+          }
+        };
+        return actions[id]?.[state.lang] || (state.lang === "cs" ? "Doplňte tuto část před podpisem." : "Add this section before signing.");
+      }
+
+      function actionForFinding(id, contractType) {
+        const lease = {
+          payment: {
+            cs: "U sankcí za prodlení ověřte procento, od kdy běží, strop a zda nejde o nepřiměřený poplatek.",
+            en: "For late-payment sanctions, verify rate, start date, cap, and proportionality."
+          },
+          penalty: {
+            cs: "U smluvní pokuty ověřte přesný spouštěč, výši, strop a zda lze porušení napravit.",
+            en: "For a penalty, verify trigger, amount, cap, and whether the breach can be cured."
+          },
+          termination: {
+            cs: "U ukončení ověřte výpovědní lhůtu, důvody a finanční následky.",
+            en: "For termination, verify notice period, grounds, and financial consequences."
+          },
+          blank: {
+            cs: "Doplňte prázdná pole a přílohy ještě před podpisem, hlavně částky, datumy a identifikaci bytu.",
+            en: "Complete blanks and attachments before signing, especially amounts, dates, and unit details."
+          },
+          "personal-data": {
+            cs: "Ověřte, jaké osobní údaje se zpracují, proč a jak dlouho se uchovají.",
+            en: "Verify which personal data is processed, why, and for how long."
+          }
+        };
+        const generic = {
+          "personal-guarantee": {
+            cs: "U ručení ověřte osobu ručitele, limit, dobu trvání a zánik zajištění.",
+            en: "For a guarantee, verify guarantor, cap, duration, and release."
+          },
+          "unlimited-liability": {
+            cs: "Navrhněte finanční strop odpovědnosti a vyloučení nepřímých škod.",
+            en: "Propose a liability cap and exclusion of indirect damages."
+          },
+          "unilateral-change": {
+            cs: "Požadujte oznámení změny, souhlas nebo právo smlouvu ukončit.",
+            en: "Require notice, consent, or an exit right for changes."
+          }
+        };
+        const source = contractType === "lease" ? { ...generic, ...lease } : generic;
+        return source[id]?.[state.lang] || null;
+      }
+
+      function buildActions(findings, coverage, contractType) {
+        const actions = [];
+        findings.slice(0, 4).forEach((finding) => {
+          actions.push(actionForFinding(finding.id, contractType) || finding.recommendation);
+        });
+        coverage
+          .filter((item) => item.required && !item.present)
+          .slice(0, 4)
+          .forEach((item) => {
+            actions.push(contractType === "lease" ? leaseActionForMissing(item.id) : (state.lang === "cs" ? `Doplňte nebo ověřte část: ${item.label}.` : `Add or verify: ${item.label}.`));
+          });
+
+        if (!actions.length) {
+          actions.push(
+            state.lang === "cs"
+              ? "Před podpisem ručně ověřte strany, částky, datumy, ukončení, odpovědnost a přílohy."
+              : "Before signing, manually verify parties, amounts, dates, termination, liability, and attachments."
+          );
+        }
+
+        return [...new Set(actions)].slice(0, 5);
+      }
+
       function buildPriorities(findings, coverage) {
         const priorities = findings.slice(0, 3).map((finding) => ({
           title: finding.title,
@@ -1550,14 +1807,20 @@
         const base = t(`summary${risk[0].toUpperCase()}${risk.slice(1)}`);
         const missingCount = coverage.filter((item) => item.required && !item.present).length;
         if (findings[0] && missingCount) {
+          const lead = findings[0].certainty === "confirmed"
+            ? state.lang === "cs" ? "Nejdřív řešit" : "First address"
+            : state.lang === "cs" ? "Nejdřív ověřit" : "First verify";
           return state.lang === "cs"
-            ? `${base} Priorita: ${findings[0].title}. ${missingCountText(missingCount)}`
-            : `${base} Priority: ${findings[0].title}. ${missingCountText(missingCount)}`;
+            ? `${base} ${lead}: ${findings[0].title}. ${missingCountText(missingCount)}`
+            : `${base} ${lead}: ${findings[0].title}. ${missingCountText(missingCount)}`;
         }
         if (findings[0]) {
+          const lead = findings[0].certainty === "confirmed"
+            ? state.lang === "cs" ? "Nejdřív řešit" : "First address"
+            : state.lang === "cs" ? "Nejdřív ověřit" : "First verify";
           return state.lang === "cs"
-            ? `${base} Priorita: ${findings[0].title}.`
-            : `${base} Priority: ${findings[0].title}.`;
+            ? `${base} ${lead}: ${findings[0].title}.`
+            : `${base} ${lead}: ${findings[0].title}.`;
         }
         if (missingCount) {
           return state.lang === "cs"
@@ -1594,6 +1857,9 @@
         }
 
         findings.sort((a, b) => b.level - a.level);
+        findings.forEach((finding) => {
+          finding.certainty = findingCertainty(finding);
+        });
         const coverage = buildCoverage(normalized, contractType);
         const missingRequired = coverage.filter((item) => item.required && !item.present).length;
         const penalty = findings.reduce((sum, item) => sum + item.level, 0) + missingRequired * 4;
@@ -1603,8 +1869,10 @@
           0.94,
           0.52 + Math.min(normalized.length, 20000) / 100000 + findings.length * 0.035
         );
-        const clauses = findClauses(normalized);
+        const clauses = findClauses(normalized, contractType);
         const priorities = buildPriorities(findings, coverage);
+        const scoreReasons = buildScoreReasons(findings, coverage);
+        const actions = buildActions(findings, coverage, contractType);
         const questions = buildQuestions(findings, contractType, coverage);
 
         return {
@@ -1613,6 +1881,8 @@
           findings,
           coverage,
           priorities,
+          scoreReasons,
+          actions,
           clauses,
           questions,
           score,
@@ -1703,9 +1973,26 @@
           )
           .join("");
 
-        const findings =
-          report.findings.length > 0
-            ? report.findings
+        const scoreReasons = report.scoreReasons.length
+          ? report.scoreReasons
+              .map(
+                (reason) => `
+              <div class="mini">
+                <strong>${escapeHtml(reason.label)}</strong>
+                ${escapeHtml(reason.detail)}
+              </div>
+            `
+              )
+              .join("")
+          : `<div class="mini">${escapeHtml(t("noScoreReasons"))}</div>`;
+
+        const actions = report.actions
+          .map((action) => `<div class="mini">${escapeHtml(action)}</div>`)
+          .join("");
+
+        const renderFindingList = (items, emptyText) =>
+          items.length > 0
+            ? items
                 .map(
                   (finding) => `
               <article class="finding">
@@ -1715,37 +2002,46 @@
                 </div>
                 <p><strong>${escapeHtml(t("whyItMatters"))}:</strong> ${escapeHtml(finding.why)}</p>
                 <p><strong>${escapeHtml(t("suggestedAction"))}:</strong> ${escapeHtml(finding.recommendation)}</p>
-                <div class="quote">${escapeHtml(finding.quote)}</div>
+                <div class="quote"><strong>${escapeHtml(t("evidence"))}:</strong> ${escapeHtml(finding.quote)}</div>
               </article>
             `
                 )
                 .join("")
-            : `<div class="mini">${escapeHtml(t("noFindings"))}</div>`;
+            : `<div class="mini">${escapeHtml(emptyText)}</div>`;
+
+        const confirmed = report.findings.filter((finding) => finding.certainty === "confirmed");
+        const possible = report.findings.filter((finding) => finding.certainty !== "confirmed");
+        const findings = `
+          <div class="finding-group">
+            <div class="group-title">${escapeHtml(t("confirmedFindings"))}</div>
+            ${renderFindingList(confirmed, t("noConfirmedFindings"))}
+          </div>
+          <div class="finding-group">
+            <div class="group-title">${escapeHtml(t("possibleFindings"))}</div>
+            ${renderFindingList(possible, t("noPossibleFindings"))}
+          </div>
+        `;
 
         const requiredCoverage = report.coverage.filter((item) => item.required);
         const foundRequired = requiredCoverage.filter((item) => item.present).length;
         const missingCoverage = requiredCoverage.filter((item) => !item.present);
-        const foundLabels = requiredCoverage
-          .filter((item) => item.present)
-          .map((item) => item.label)
-          .slice(0, 8)
-          .join(", ");
-        const coverageRows = [
-          {
-            label: `${t("present")}: ${foundRequired}/${requiredCoverage.length}`,
-            detail:
-              state.lang === "cs"
-                ? `Nalezené části: ${foundLabels || "-"}`
-                : `Found sections: ${foundLabels || "-"}`
-          },
-          ...missingCoverage.slice(0, 6).map((item) => ({
+        const coverageRows = missingCoverage.length
+          ? missingCoverage.slice(0, 6).map((item) => ({
             label: `${t("missing")}: ${item.label}`,
             detail:
               state.lang === "cs"
                 ? "Před podpisem ověřte nebo doplňte."
                 : "Verify or add before signing."
           }))
-        ];
+          : [
+              {
+                label: `${t("present")}: ${foundRequired}/${requiredCoverage.length}`,
+                detail:
+                  state.lang === "cs"
+                    ? "Základní části jsou v textu nalezené."
+                    : "Core sections are present in the text."
+              }
+            ];
         const coverage = coverageRows
           .map(
             (item) => `
@@ -1772,13 +2068,19 @@
             <div><span>${escapeHtml(t("chars"))}</span><strong>${report.text.length.toLocaleString()}</strong></div>
           </div>
 
+          <h3 class="section-title">${escapeHtml(t("scoreReasons"))}</h3>
+          <div class="score-reasons">${scoreReasons}</div>
+
           <h3 class="section-title">${escapeHtml(t("priorities"))}</h3>
           <div class="priority-list">${priorities}</div>
+
+          <h3 class="section-title">${escapeHtml(t("actionsTitle"))}</h3>
+          <div class="action-list">${actions}</div>
 
           <h3 class="section-title">${escapeHtml(t("findings"))}</h3>
           <div class="findings">${findings}</div>
 
-          <h3 class="section-title">${escapeHtml(t("coverage"))}</h3>
+          <h3 class="section-title">${escapeHtml(missingCoverage.length ? t("coverage") : t("contentCheck"))}</h3>
           <div class="coverage">${coverage}</div>
 
           <h3 class="section-title">${escapeHtml(t("clauses"))}</h3>
@@ -1813,13 +2115,19 @@
           "",
           report.summary,
           "",
+          t("scoreReasons"),
+          ...(report.scoreReasons.length ? report.scoreReasons.map((reason) => `- ${reason.label}: ${reason.detail}`) : [`- ${t("noScoreReasons")}`]),
+          "",
           t("priorities"),
           ...report.priorities.map((priority) => `- ${priority.title}: ${priority.detail}`),
+          "",
+          t("actionsTitle"),
+          ...report.actions.map((action) => `- ${action}`),
           "",
           t("findings"),
           ...report.findings.map(
             (finding) =>
-              `- ${finding.title} (${finding.severity}, ${Math.round(finding.confidence * 100)}%): ${finding.recommendation}`
+              `- ${finding.title} (${certaintyLabel(finding.certainty)}, ${finding.severity}, ${Math.round(finding.confidence * 100)}%): ${finding.recommendation}`
           ),
           "",
           t("coverage"),
