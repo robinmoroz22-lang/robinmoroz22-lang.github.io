@@ -825,7 +825,7 @@
           id: "penalty",
           area: "sanctions",
           level: 18,
-          pattern: /smluvn[íi]\s+pokut|contractual\s+penalt|penalt(y|ies)|sankc|fine/gi,
+          pattern: /smluvn.?i?\s+pokut|contractual\s+penalt|penalt(y|ies)|sankc|fine/gi,
           cs: ["Smluvní pokuta", "Ověřte výši, strop a situace, kdy pokuta vzniká."],
           en: ["Contractual penalty", "Check amount, cap, and exact trigger conditions."]
         },
@@ -834,7 +834,7 @@
           area: "liability",
           level: 22,
           pattern:
-            /bez\s+omezen[íi]|neomezen[aá]\s+odpov[eě]dnost|unlimited\s+liability|all\s+damages|vešker[eé]\s+škody/gi,
+            /bez\s+omezen|neomezen.{0,4}\s+odpov.{0,4}dnost|unlimited\s+liability|all\s+damages|vesker.{0,4}\s+skod/gi,
           cs: ["Neomezená odpovědnost", "Zvažte limit odpovědnosti a vyloučení nepřímých škod."],
           en: ["Unlimited liability", "Consider a liability cap and exclusion of indirect damages."]
         },
@@ -843,7 +843,7 @@
           area: "changes",
           level: 16,
           pattern:
-            /jednostrann[eě]\s+(zm[eě]n|upravit)|unilaterally\s+(change|amend)|sole\s+discretion/gi,
+            /jednostrann.{0,3}\s+(zmen|upravit)|unilaterally\s+(change|amend)|sole\s+discretion/gi,
           cs: ["Jednostranná změna", "Doplňte souhlas, oznámení a možnost ukončení při změně."],
           en: ["Unilateral change", "Add consent, notice, and exit right for changes."]
         },
@@ -852,7 +852,7 @@
           area: "termination",
           level: 14,
           pattern:
-            /výpov[eě]dn[íi]\s+lh[uů]ta\s+nen[íi]|without\s+notice|immediate\s+termination|terminate\s+at\s+any\s+time/gi,
+            /vypov.{0,5}\s+lh.{0,3}ta\s+nen|without\s+notice|immediate\s+termination|terminate\s+at\s+any\s+time/gi,
           cs: ["Ukončení smlouvy", "Zkontrolujte výpovědní lhůtu, důvody a následky ukončení."],
           en: ["Termination", "Check notice period, grounds, and consequences of termination."]
         },
@@ -861,7 +861,7 @@
           area: "renewal",
           level: 12,
           pattern:
-            /automatick[eé]\s+prodlou[žz]en[íi]|automatic\s+renewal|auto[-\s]?renew|renews\s+automatically/gi,
+            /automatick.{0,3}\s+prodlou.{0,3}en|automatic\s+renewal|auto[-\s]?renew|renews\s+automatically/gi,
           cs: ["Automatické prodloužení", "Ověřte datum, upozornění a jednoduchý způsob odmítnutí."],
           en: ["Automatic renewal", "Check date, notice, and a simple opt-out path."]
         },
@@ -870,7 +870,7 @@
           area: "disputes",
           level: 13,
           pattern:
-            /rozhod[čc][íi]\s+dolo[žz]k|arbitration|jurisdiction|governing\s+law|p[řr][íi]slu[šs]n[ýy]\s+soud/gi,
+            /rozhodc.{0,3}\s+dolo.{0,3}k|rozhodn.{0,3}\s+pr.{0,2}vo|arbitration|jurisdiction|governing\s+law|p.{0,3}slusn.{0,3}\s+soud/gi,
           cs: ["Řešení sporů", "Ověřte právo, soud/arbitráž a praktické náklady sporu."],
           en: ["Dispute forum", "Check governing law, court/arbitration, and practical dispute cost."]
         },
@@ -879,7 +879,7 @@
           area: "IP",
           level: 13,
           pattern:
-            /du[šs]evn[íi]\s+vlastnictv[íi]|autorsk[eé]\s+pr[aá]vo|intellectual\s+property|copyright|work\s+product/gi,
+            /dusevn.{0,3}\s+vlastnictv|autorsk.{0,3}\s+pravo|intellectual\s+property|copyright|work\s+product/gi,
           cs: ["Duševní vlastnictví", "Ujasněte převod/licenci, rozsah užití a odměnu."],
           en: ["Intellectual property", "Clarify assignment/license, usage scope, and compensation."]
         },
@@ -888,7 +888,7 @@
           area: "data",
           level: 12,
           pattern:
-            /osobn[íi]\s+[úu]daj|gdpr|zpracov[aá]n[íi]\s+[úu]daj|personal\s+data|data\s+processing|privacy/gi,
+            /osobn.{0,3}\s+.?daj|gdpr|zpracov.{0,4}n.{0,3}\s+.?daj|personal\s+data|data\s+processing|privacy/gi,
           cs: ["Osobní údaje", "Zkontrolujte účel, role stran, zabezpečení a dobu uchování."],
           en: ["Personal data", "Check purpose, party roles, security, and retention period."]
         },
@@ -896,7 +896,7 @@
           id: "payment",
           area: "payment",
           level: 11,
-          pattern: /splatnost|faktur|late\s+payment|invoice|payment\s+term|úrok\s+z\s+prodlen[íi]/gi,
+          pattern: /splatnost|faktur|late\s+payment|invoice|payment\s+term|urok\s+z\s+prodlen/gi,
           cs: ["Platby", "Ověřte splatnost, sankce, měnu, DPH a podmínky fakturace."],
           en: ["Payment", "Check due date, sanctions, currency, VAT, and invoicing terms."]
         },
@@ -904,7 +904,7 @@
           id: "indemnity",
           area: "liability",
           level: 16,
-          pattern: /od[šs]kodn[íi]|nahrad[íi]\s+ve[šs]ker|indemnif|hold\s+harmless|defend\s+and\s+hold/gi,
+          pattern: /odskodn|nahrad.{0,3}\s+vesker|indemnif|hold\s+harmless|defend\s+and\s+hold/gi,
           cs: ["Odškodnění", "Zúžte rozsah odškodnění na zaviněné a prokazatelné škody."],
           en: ["Indemnity", "Limit indemnity to proven losses caused by the responsible party."]
         },
@@ -912,7 +912,7 @@
           id: "non-compete",
           area: "restriction",
           level: 15,
-          pattern: /konkuren[čc]n[íi]\s+dolo[žz]k|z[aá]kaz\s+konkurence|non[-\s]?compete|exclusiv(e|ity)/gi,
+          pattern: /konkurencn.{0,3}\s+dolo.{0,3}k|zakaz\s+konkurence|non[-\s]?compete|exclusiv(e|ity)/gi,
           cs: ["Omezení konkurence / exkluzivita", "Zkontrolujte dobu, území, kompenzaci a přiměřenost omezení."],
           en: ["Non-compete / exclusivity", "Check duration, territory, compensation, and proportionality."]
         },
@@ -920,7 +920,7 @@
           id: "personal-guarantee",
           area: "security",
           level: 17,
-          pattern: /ru[čc]en[íi]|sm[eě]nka|zaji[šs]t[eě]n[íi]|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
+          pattern: /ru.{0,2}en|smenka|zaj.{0,4}t.{0,4}n|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
           cs: ["Ručení nebo zajištění", "Ověřte, kdo ručí, do jaké výše a kdy závazek zaniká."],
           en: ["Guarantee or security", "Verify who guarantees, the cap, and when the security ends."]
         },
@@ -935,12 +935,12 @@
       ];
 
       const typePatterns = [
-        ["employment", /pracovn[íi]\s+smlouva|zam[eě]stnanec|employee|employment|salary|mzda/gi],
-        ["lease", /n[aá]jem|pronaj[íi]matel|n[aá]jemce|lease|landlord|tenant|rent/gi],
-        ["nda", /ml[čc]enlivost|d[uů]v[eě]rn|confidential|non[-\s]?disclosure|nda/gi],
-        ["service", /smlouva\s+o\s+d[íi]lo|dodavatel|objednatel|service|work\s+order|contractor/gi],
-        ["purchase", /kupn[íi]\s+smlouva|prod[aá]vaj[íi]c[íi]|kupuj[íi]c[íi]|purchase|seller|buyer/gi],
-        ["loan", /p[uů]j[čc]ka|[úu]v[eě]r|dlu[žz]n[íi]k|v[eě][řr]itel|loan|borrower|lender/gi]
+        ["employment", /pracovn.{0,3}\s+smlouva|zamestnanec|employee|employment|salary|mzda/gi],
+        ["lease", /najem|pronajimatel|najemce|lease|landlord|tenant|rent/gi],
+        ["nda", /ml.{0,2}enlivost|duvern|confidential|non[-\s]?disclosure|nda/gi],
+        ["service", /smlouva\s+o\s+dilo|dodavatel|objednatel|service|work\s+order|contractor/gi],
+        ["purchase", /kupn.{0,3}\s+smlouva|prodavajic|kupujic|purchase|seller|buyer/gi],
+        ["loan", /pujcka|uver|dluznik|veritel|loan|borrower|lender/gi]
       ];
 
       const state = {
@@ -1044,6 +1044,14 @@
           .replace(/\n{4,}/g, "\n\n\n")
           .replace(/[ \t]{2,}/g, " ")
           .trim();
+      }
+
+      function foldText(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[�]/g, "?")
+          .toLowerCase();
       }
 
       function extension(fileName) {
@@ -1316,11 +1324,12 @@
       }
 
       function detectClauseType(value) {
-        if (/splatnost|payment|invoice|faktur/i.test(value)) return "payment";
-        if (/odpov[eě]dnost|liability|damage/i.test(value)) return "liability";
-        if (/ml[čc]enlivost|confidential|nda/i.test(value)) return "confidentiality";
-        if (/ukon[čc]en|výpov[eě]|termination/i.test(value)) return "termination";
-        if (/osobn[íi]\s+[úu]daj|gdpr|personal\s+data/i.test(value)) return "data";
+        const folded = foldText(value);
+        if (/splatnost|payment|invoice|faktur/.test(folded)) return "payment";
+        if (/odpov.{0,4}dnost|liability|damage/.test(folded)) return "liability";
+        if (/ml.{0,2}enlivost|confidential|nda/.test(folded)) return "confidentiality";
+        if (/ukon.{0,3}en|vypov|termination/.test(folded)) return "termination";
+        if (/osobn.{0,3}\s+.?daj|gdpr|personal\s+data/.test(folded)) return "data";
         return "general";
       }
 
@@ -1390,42 +1399,42 @@
 
       function sectionDefinitions(contractType) {
         const base = [
-          { id: "parties", required: true, cs: "Smluvní strany", en: "Parties", patterns: [/smluvn[íi]\s+stran|mezi|party|parties|between/i] },
-          { id: "subject", required: true, cs: "Předmět plnění", en: "Subject / scope", patterns: [/předm[eě]t|predmet|scope|subject|pln[eě]n[íi]|services|deliverables/i] },
-          { id: "price", required: true, cs: "Cena a platby", en: "Price and payment", patterns: [/cena|odm[eě]na|splatnost|faktur|payment|price|fee|invoice|rent|salary/i] },
-          { id: "term", required: true, cs: "Doba trvání / účinnost", en: "Term / effective date", patterns: [/doba\s+trv[aá]n[íi]|účinnost|ucinnost|platnost|term|duration|effective/i] },
-          { id: "termination", required: true, cs: "Ukončení", en: "Termination", patterns: [/ukon[čc]en|výpov|vypov|odstoupen|termination|notice|withdraw/i] },
-          { id: "liability", required: true, cs: "Odpovědnost a náhrada škody", en: "Liability and damages", patterns: [/odpov[eě]dnost|odpovednost|náhrada škody|nahrada skody|liability|damage/i] },
-          { id: "disputes", required: true, cs: "Právo a řešení sporů", en: "Law and disputes", patterns: [/rozhodn[eé]\s+pr[aá]vo|příslušn|prislusn|soud|jurisdiction|governing\s+law|dispute|court|arbitration/i] },
+          { id: "parties", required: true, cs: "Smluvní strany", en: "Parties", patterns: [/smluvn.?i?\s+stran|mezi|party|parties|between/] },
+          { id: "subject", required: true, cs: "Předmět plnění", en: "Subject / scope", patterns: [/p.{0,2}edm.{0,4}t|predm.{0,4}t|scope|subject|pln.{0,4}n|services|deliverables/] },
+          { id: "price", required: true, cs: "Cena a platby", en: "Price and payment", patterns: [/cena|odmena|splatnost|faktur|payment|price|fee|invoice|rent|salary/] },
+          { id: "term", required: true, cs: "Doba trvání / účinnost", en: "Term / effective date", patterns: [/doba\s+trv.{0,4}n|ucinnost|platnost|term|duration|effective/] },
+          { id: "termination", required: true, cs: "Ukončení", en: "Termination", patterns: [/ukon.{0,3}en|vypov|odstoupen|termination|notice|withdraw/] },
+          { id: "liability", required: true, cs: "Odpovědnost a náhrada škody", en: "Liability and damages", patterns: [/odpov.{0,4}dnost|nahrada\s+skody|liability|damage/] },
+          { id: "disputes", required: true, cs: "Právo a řešení sporů", en: "Law and disputes", patterns: [/rozhodn.{0,3}\s+pr.{0,2}vo|p.{0,3}slusn|soud|jurisdiction|governing\s+law|dispute|court|arbitration/] },
           { id: "signatures", required: true, cs: "Podpisy / datum", en: "Signatures / date", patterns: [/podpis|podeps|datum|signature|signed|date/i] },
-          { id: "confidentiality", required: false, cs: "Mlčenlivost", en: "Confidentiality", patterns: [/ml[čc]enlivost|důvěrn|duvern|confidential|nda/i] },
-          { id: "personal-data", required: false, cs: "Osobní údaje", en: "Personal data", patterns: [/osobn[íi]\s+[úu]daj|gdpr|personal\s+data|privacy|data\s+processing/i] }
+          { id: "confidentiality", required: false, cs: "Mlčenlivost", en: "Confidentiality", patterns: [/ml.{0,2}enlivost|duvern|confidential|nda/] },
+          { id: "personal-data", required: false, cs: "Osobní údaje", en: "Personal data", patterns: [/osobn.{0,3}\s+.?daj|gdpr|personal\s+data|privacy|data\s+processing/] }
         ];
 
         const specific = {
           lease: [
-            { id: "deposit", required: true, cs: "Kauce / jistota", en: "Deposit", patterns: [/kauce|jistota|deposit|security/i] },
-            { id: "handover", required: true, cs: "Předání a opravy", en: "Handover and repairs", patterns: [/před[aá]n|predan|opravy|údržba|udrzba|handover|repair|maintenance/i] }
+            { id: "deposit", required: true, cs: "Kauce / jistota", en: "Deposit", patterns: [/kauce|jistota|deposit|security/] },
+            { id: "handover", required: true, cs: "Předání a opravy", en: "Handover and repairs", patterns: [/pred.{0,3}n|opravy|udrzba|handover|repair|maintenance/] }
           ],
           employment: [
-            { id: "role", required: true, cs: "Druh práce a místo", en: "Role and workplace", patterns: [/druh\s+pr[aá]ce|m[ií]sto\s+v[yý]konu|role|position|workplace/i] },
-            { id: "worktime", required: true, cs: "Pracovní doba", en: "Working time", patterns: [/pracovn[íi]\s+doba|working\s+time|hours/i] }
+            { id: "role", required: true, cs: "Druh práce a místo", en: "Role and workplace", patterns: [/druh\s+prace|misto\s+vykonu|role|position|workplace/] },
+            { id: "worktime", required: true, cs: "Pracovní doba", en: "Working time", patterns: [/pracovn.{0,3}\s+doba|working\s+time|hours/] }
           ],
           nda: [
-            { id: "secret-definition", required: true, cs: "Definice důvěrných informací", en: "Definition of confidential information", patterns: [/důvěrn[ée]\s+informace|duvern[eé]\s+informace|confidential\s+information/i] },
-            { id: "exceptions", required: true, cs: "Výjimky z mlčenlivosti", en: "Confidentiality exclusions", patterns: [/výjimk|vyjimk|exclusion|exception|publicly\s+known/i] }
+            { id: "secret-definition", required: true, cs: "Definice důvěrných informací", en: "Definition of confidential information", patterns: [/duvern.{0,3}\s+informace|confidential\s+information/] },
+            { id: "exceptions", required: true, cs: "Výjimky z mlčenlivosti", en: "Confidentiality exclusions", patterns: [/vyjimk|exclusion|exception|publicly\s+known/] }
           ],
           service: [
-            { id: "acceptance", required: true, cs: "Předání a akceptace", en: "Delivery and acceptance", patterns: [/akceptac|před[aá]n|predan|acceptance|handover|delivery/i] },
-            { id: "change-requests", required: false, cs: "Změnové požadavky", en: "Change requests", patterns: [/zm[eě]nov|change\s+request|scope\s+change/i] }
+            { id: "acceptance", required: true, cs: "Předání a akceptace", en: "Delivery and acceptance", patterns: [/akceptac|pred.{0,3}n|acceptance|handover|delivery/] },
+            { id: "change-requests", required: false, cs: "Změnové požadavky", en: "Change requests", patterns: [/zmenov|change\s+request|scope\s+change/] }
           ],
           purchase: [
-            { id: "delivery", required: true, cs: "Dodání a vlastnictví", en: "Delivery and ownership", patterns: [/dod[aá]n|vlastnictv[íi]|delivery|ownership|title/i] },
-            { id: "warranty", required: true, cs: "Záruka / vady", en: "Warranty / defects", patterns: [/z[aá]ruk|vad|reklamac|warranty|defect|claim/i] }
+            { id: "delivery", required: true, cs: "Dodání a vlastnictví", en: "Delivery and ownership", patterns: [/dod.{0,3}n|vlastnictv|delivery|ownership|title/] },
+            { id: "warranty", required: true, cs: "Záruka / vady", en: "Warranty / defects", patterns: [/zaruk|vad|reklamac|warranty|defect|claim/] }
           ],
           loan: [
-            { id: "repayment", required: true, cs: "Splátky a úrok", en: "Repayment and interest", patterns: [/spl[aá]tk|úrok|urok|repayment|interest/i] },
-            { id: "default", required: true, cs: "Prodlení a zesplatnění", en: "Default and acceleration", patterns: [/prodlen|zesplat|default|acceleration/i] }
+            { id: "repayment", required: true, cs: "Splátky a úrok", en: "Repayment and interest", patterns: [/splatk|urok|repayment|interest/] },
+            { id: "default", required: true, cs: "Prodlení a zesplatnění", en: "Default and acceleration", patterns: [/prodlen|zesplat|default|acceleration/] }
           ]
         };
 
@@ -1433,11 +1442,12 @@
       }
 
       function buildCoverage(text, contractType) {
+        const folded = foldText(text);
         return sectionDefinitions(contractType).map((section) => ({
           id: section.id,
           label: section[state.lang],
           required: section.required,
-          present: section.patterns.some((pattern) => pattern.test(text))
+          present: section.patterns.some((pattern) => pattern.test(folded))
         }));
       }
 
@@ -1493,12 +1503,13 @@
 
       function analyze(text) {
         const normalized = cleanText(text).slice(0, 180000);
-        const contractType = detectType(normalized);
+        const searchable = foldText(normalized);
+        const contractType = detectType(searchable);
         const findings = [];
         const seen = new Set();
 
         for (const rule of riskRules) {
-          const matches = [...normalized.matchAll(rule.pattern)];
+          const matches = [...searchable.matchAll(rule.pattern)];
           if (matches.length && !seen.has(rule.id)) {
             seen.add(rule.id);
             const [title, recommendation] = rule[state.lang];
