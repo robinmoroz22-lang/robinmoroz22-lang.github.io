@@ -290,6 +290,16 @@
         line-height: 1.5;
       }
 
+      .status {
+        margin-top: 12px;
+      }
+
+      .status.busy,
+      .status.error {
+        border-color: var(--line-strong);
+        color: var(--text);
+      }
+
       .file-row {
         display: flex;
         justify-content: space-between;
@@ -326,6 +336,11 @@
       .check input {
         margin-top: 2px;
         accent-color: #fff;
+      }
+
+      .check.error {
+        border-color: var(--text);
+        color: var(--text);
       }
 
       .actions {
@@ -616,14 +631,14 @@
               </div>
             </div>
 
+            <div id="status" class="status hidden" aria-live="polite"></div>
+
             <div class="actions">
               <button id="analyzeBtn" type="button" class="btn primary" data-i18n="analyze">
                 Analyzovat zdarma
               </button>
               <button id="clearBtn" type="button" class="btn" data-i18n="clear">Vymazat</button>
             </div>
-
-            <div id="status" class="status hidden"></div>
           </div>
         </div>
 
@@ -678,8 +693,11 @@
           extracting: "Čtu soubory...",
           ocr: "Rozpoznávám text z obrázku...",
           analyzing: "Analyzuji rizika...",
+          selectedReady: "Soubor je vybraný. Potvrďte podmínku a spusťte analýzu.",
           missingAck: "Nejdřív potvrďte orientační povahu výstupu.",
           missingText: "Vložte text nebo vyberte soubor.",
+          noReadableText: "Ze souboru se nepodařilo získat čitelný text. U skenu zkuste foto nebo textovou PDF/DOCX verzi.",
+          readFailed: "Soubor se nepodařilo přečíst",
           tooLarge: "Text je příliš dlouhý. Zkraťte ho nebo rozdělte smlouvu.",
           done: "Hotovo",
           low: "Nízké riziko",
@@ -730,8 +748,11 @@
           extracting: "Reading files...",
           ocr: "Recognizing image text...",
           analyzing: "Analyzing risks...",
+          selectedReady: "File selected. Confirm the notice and start analysis.",
           missingAck: "Confirm that the output is orientation only first.",
           missingText: "Paste text or choose a file.",
+          noReadableText: "No readable text could be extracted from the file. For scans, try a photo or a text PDF/DOCX version.",
+          readFailed: "Could not read the file",
           tooLarge: "The text is too long. Shorten it or split the contract.",
           done: "Done",
           low: "Low risk",
@@ -857,7 +878,8 @@
         mode: "text",
         files: [],
         extractedText: "",
-        lastReport: null
+        lastReport: null,
+        processing: false
       };
 
       const $ = (id) => document.getElementById(id);
@@ -881,6 +903,7 @@
         if (!state.lastReport) $("reportMeta").textContent = "-";
         renderFiles();
         if (state.lastReport) renderReport(state.lastReport);
+        if (!state.processing) $("analyzeBtn").textContent = t("analyze");
       }
 
       function setMode(mode) {
@@ -893,9 +916,26 @@
         $("photoMode").classList.toggle("hidden", mode !== "photo");
       }
 
-      function status(message, show = true) {
-        $("status").textContent = message;
-        $("status").classList.toggle("hidden", !show);
+      function status(message, show = true, kind = "info") {
+        const node = $("status");
+        node.textContent = message;
+        node.classList.toggle("hidden", !show);
+        node.classList.toggle("busy", kind === "busy");
+        node.classList.toggle("error", kind === "error");
+        if (show) {
+          node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+
+      function setBusy(isBusy, message) {
+        state.processing = isBusy;
+        $("analyzeBtn").disabled = isBusy;
+        $("clearBtn").disabled = isBusy;
+        $("analyzeBtn").textContent = isBusy ? message : t("analyze");
+      }
+
+      function setAckError(hasError) {
+        $("ack").closest(".check").classList.toggle("error", hasError);
       }
 
       function formatBytes(bytes) {
@@ -967,7 +1007,8 @@
 
       async function readImage(file) {
         if (!window.Tesseract) throw new Error("OCR is not loaded.");
-        status(t("ocr"));
+        setBusy(true, t("ocr"));
+        status(t("ocr"), true, "busy");
         try {
           const result = await window.Tesseract.recognize(file, "ces+eng", {
             logger: () => {}
@@ -1009,23 +1050,50 @@
 
       async function extractFiles(files) {
         const parts = [];
+        const failures = [];
         for (const file of files) {
-          const ext = extension(file.name);
-          if (file.size > 20 * 1024 * 1024) {
-            parts.push("");
-          } else if (["txt", "md", "rtf", "csv"].includes(ext)) {
-            parts.push(await readTextFile(file));
-          } else if (ext === "pdf" || file.type === "application/pdf") {
-            parts.push(await readPdf(file));
-          } else if (ext === "docx") {
-            parts.push(await readDocx(file));
-          } else if (ext === "zip") {
-            parts.push(await readZip(file));
-          } else if (file.type.startsWith("image/")) {
-            parts.push(await readImage(file));
+          try {
+            const ext = extension(file.name);
+            let extracted = "";
+            if (file.size > 20 * 1024 * 1024) {
+              failures.push(`${file.name}: >20 MB`);
+            } else if (["txt", "md", "rtf", "csv"].includes(ext)) {
+              extracted = await readTextFile(file);
+            } else if (ext === "pdf" || file.type === "application/pdf") {
+              extracted = await readPdf(file);
+            } else if (ext === "docx") {
+              extracted = await readDocx(file);
+            } else if (ext === "zip") {
+              extracted = await readZip(file);
+            } else if (file.type.startsWith("image/")) {
+              extracted = await readImage(file);
+            } else {
+              failures.push(`${file.name}: unsupported`);
+            }
+
+            if (cleanText(extracted)) {
+              parts.push(extracted);
+            } else if (!failures.some((item) => item.startsWith(`${file.name}:`))) {
+              failures.push(`${file.name}: empty text`);
+            }
+          } catch (error) {
+            failures.push(
+              `${file.name}: ${error instanceof Error ? error.message : "unknown"}`
+            );
           }
         }
-        return cleanText(parts.join("\n\n"));
+
+        const text = cleanText(parts.join("\n\n"));
+        if (!text) {
+          const detail = failures.length ? ` (${failures[0]})` : "";
+          throw new Error(`${t("noReadableText")}${detail}`);
+        }
+
+        if (failures.length) {
+          status(`${t("readFailed")}: ${failures[0]}`, true, "error");
+        }
+
+        return text;
       }
 
       function detectType(text) {
@@ -1260,13 +1328,19 @@
       }
 
       async function runAnalysis() {
+        if (state.processing) return;
+
         if (!$("ack").checked) {
-          status(t("missingAck"));
+          setAckError(true);
+          status(t("missingAck"), true, "error");
           return;
         }
 
+        setAckError(false);
+
         try {
-          status(state.files.length ? t("extracting") : t("analyzing"));
+          setBusy(true, state.files.length ? t("extracting") : t("analyzing"));
+          status(state.files.length ? t("extracting") : t("analyzing"), true, "busy");
           let text = $("contractText").value;
           if (state.files.length) {
             text = await extractFiles(state.files);
@@ -1276,20 +1350,23 @@
 
           text = cleanText(text);
           if (!text) {
-            status(t("missingText"));
+            status(t("missingText"), true, "error");
             return;
           }
           if (text.length > 180000) {
-            status(t("tooLarge"));
+            status(t("tooLarge"), true, "error");
             return;
           }
 
-          status(t("analyzing"));
+          setBusy(true, t("analyzing"));
+          status(t("analyzing"), true, "busy");
           const report = analyze(text);
           renderReport(report);
           status("", false);
         } catch (error) {
-          status(error instanceof Error ? error.message : "Error");
+          status(error instanceof Error ? error.message : "Error", true, "error");
+        } finally {
+          setBusy(false);
         }
       }
 
@@ -1305,6 +1382,8 @@
         $("result").classList.add("hidden");
         $("emptyResult").classList.remove("hidden");
         $("reportMeta").textContent = "-";
+        setAckError(false);
+        setBusy(false);
         renderFiles();
         status("", false);
       }
@@ -1319,10 +1398,12 @@
       $("fileInput").addEventListener("change", (event) => {
         state.files = Array.from(event.target.files || []);
         renderFiles();
+        if (state.files.length) status(t("selectedReady"), true, "busy");
       });
       $("photoInput").addEventListener("change", (event) => {
         state.files = Array.from(event.target.files || []);
         renderFiles();
+        if (state.files.length) status(t("selectedReady"), true, "busy");
       });
 
       ["fileMode", "photoMode"].forEach((id) => {
@@ -1337,11 +1418,15 @@
           zone.classList.remove("drag");
           state.files = Array.from(event.dataTransfer.files || []);
           renderFiles();
+          if (state.files.length) status(t("selectedReady"), true, "busy");
         });
       });
 
       $("analyzeBtn").addEventListener("click", runAnalysis);
       $("clearBtn").addEventListener("click", clearAll);
+      $("ack").addEventListener("change", () => {
+        if ($("ack").checked) setAckError(false);
+      });
 
       setLanguage("cs");
     </script>
