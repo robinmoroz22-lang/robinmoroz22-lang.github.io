@@ -739,11 +739,11 @@
           confidence: "Jistota",
           type: "Typ",
           chars: "Znaky",
-          findings: "Rizika",
-          priorities: "Nejdřív řešit",
-          coverage: "Kontrola obsahu",
-          clauses: "Klauzule",
-          questions: "Otázky",
+          findings: "Detaily",
+          priorities: "Top 3 věci",
+          coverage: "Chybí ověřit",
+          clauses: "Relevantní části",
+          questions: "Otázky pro protistranu",
           whyItMatters: "Proč to řešit",
           suggestedAction: "Doporučený krok",
           missing: "Chybí / ověřit",
@@ -801,11 +801,11 @@
           confidence: "Confidence",
           type: "Type",
           chars: "Characters",
-          findings: "Findings",
-          priorities: "Fix first",
-          coverage: "Content check",
-          clauses: "Clauses",
-          questions: "Questions",
+          findings: "Details",
+          priorities: "Top 3 items",
+          coverage: "Missing to verify",
+          clauses: "Relevant sections",
+          questions: "Questions for the other side",
           whyItMatters: "Why it matters",
           suggestedAction: "Suggested action",
           missing: "Missing / verify",
@@ -896,9 +896,9 @@
           id: "payment",
           area: "payment",
           level: 11,
-          pattern: /splatnost|faktur|late\s+payment|invoice|payment\s+term|urok\s+z\s+prodlen/gi,
-          cs: ["Platby", "Ověřte splatnost, sankce, měnu, DPH a podmínky fakturace."],
-          en: ["Payment", "Check due date, sanctions, currency, VAT, and invoicing terms."]
+          pattern: /late\s+payment|urok\s+z\s+prodlen|prodlen.{0,35}(plat|uhrad|najem|dluzn)|dluzn.{0,35}(cast|najem|uhrad)|\b1\s*%\s+z\s+dluzn/gi,
+          cs: ["Prodlení s platbou", "Ověřte sankce, úrok, poplatky a lhůtu pro nápravu při prodlení."],
+          en: ["Late payment", "Check sanctions, interest, fees, and cure period for late payment."]
         },
         {
           id: "indemnity",
@@ -920,7 +920,7 @@
           id: "personal-guarantee",
           area: "security",
           level: 17,
-          pattern: /ru.{0,2}en|smenka|zaj.{0,4}t.{0,4}n|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
+          pattern: /rucitel|rucen|smenka|osobn.{0,3}\s+zaruk|bankovn.{0,3}\s+zaruk|zajistovac.{0,4}\s+prevod|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
           cs: ["Ručení nebo zajištění", "Ověřte, kdo ručí, do jaké výše a kdy závazek zaniká."],
           en: ["Guarantee or security", "Verify who guarantees, the cap, and when the security ends."]
         },
@@ -928,16 +928,16 @@
           id: "blank",
           area: "completeness",
           level: 15,
-          pattern: /_{3,}|XXX|TBD|doplnit|to\s+be\s+completed|\[\s*\]/gi,
+          pattern: /_{3,}|xxx|tbd|to\s+be\s+completed|\[\s*\]|<\s*doplnit\s*>|doplnit\s*[:.]|bude\s+doplnen|zustava\s+nedoplnen/gi,
           cs: ["Prázdné nebo nedoplněné místo", "Před podpisem doplňte všechny údaje."],
           en: ["Blank or incomplete field", "Complete all placeholders before signing."]
         }
       ];
 
       const typePatterns = [
-        ["employment", /pracovn.{0,3}\s+smlouva|zamestnanec|employee|employment|salary|mzda/gi],
-        ["lease", /najem|pronajimatel|najemce|lease|landlord|tenant|rent/gi],
-        ["nda", /ml.{0,2}enlivost|duvern|confidential|non[-\s]?disclosure|nda/gi],
+        ["employment", /pracovn.{0,3}\s+smlouva|zam.{0,2}stnanec|employee|employment|salary|mzda/gi],
+        ["lease", /n.?jem|pronaj.{0,2}matel|n.?jemce|lease|landlord|tenant|rent/gi],
+        ["nda", /ml.{0,2}enlivost|d.{0,2}v.{0,2}rn|confidential|non[-\s]?disclosure|nda/gi],
         ["service", /smlouva\s+o\s+dilo|dodavatel|objednatel|service|work\s+order|contractor/gi],
         ["purchase", /kupn.{0,3}\s+smlouva|prodavajic|kupujic|purchase|seller|buyer/gi],
         ["loan", /pujcka|uver|dluznik|veritel|loan|borrower|lender/gi]
@@ -1044,6 +1044,14 @@
           .replace(/\n{4,}/g, "\n\n\n")
           .replace(/[ \t]{2,}/g, " ")
           .trim();
+      }
+
+      function maskSensitive(value) {
+        return cleanText(String(value || ""))
+          .replace(/\b([A-Z0-9._%+-])[A-Z0-9._%+-]*(@[A-Z0-9.-]+\.[A-Z]{2,})\b/gi, "$1***$2")
+          .replace(/\b\d{2}[0-5]\d[0-3]\d\/?\d{3,4}\b/g, "**/**/**/**")
+          .replace(/\b\d{6}\/(?=\D|$)/g, "**/**/**/")
+          .replace(/\b(\+420\s*)?\d{3}[\s.-]?\d{3}[\s.-]?\d{3}\b/g, "+420 *** *** ***");
       }
 
       function foldText(value) {
@@ -1303,7 +1311,7 @@
       function excerpt(text, index) {
         const start = Math.max(0, index - 90);
         const end = Math.min(text.length, index + 150);
-        return cleanText(`${start > 0 ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`);
+        return maskSensitive(`${start > 0 ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`);
       }
 
       function findClauses(text) {
@@ -1311,26 +1319,60 @@
           .split(/\n\s*\n|(?=\b\d+[\).\s])|(?=\b[A-ZÁ-Ž][A-ZÁ-Ž ]{5,}\b)/)
           .map(cleanText)
           .filter((part) => part.length > 80)
-          .slice(0, 6);
+          .slice(0, 10);
 
-        return chunks.map((part) => {
-          const type = detectClauseType(part);
-          return {
-            type,
-            title: type,
-            excerpt: part.slice(0, 360)
-          };
-        });
+        const seen = new Set();
+        return chunks
+          .map((part) => {
+            const type = detectClauseType(part);
+            return {
+              type,
+              title: clauseTitle(type),
+              excerpt: maskSensitive(part.slice(0, 320))
+            };
+          })
+          .filter((clause) => {
+            const key = `${clause.type}:${clause.excerpt.slice(0, 40)}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .slice(0, 5);
       }
 
       function detectClauseType(value) {
         const folded = foldText(value);
-        if (/splatnost|payment|invoice|faktur/.test(folded)) return "payment";
+        if (/byt|jednotka|sklep|podlahov|adresa|balkon|nemovitost/.test(folded)) return "lease-unit";
+        if (/kauce|jistota|deposit/.test(folded)) return "deposit";
+        if (/slu.{0,2}b|z.{0,2}loh|vodne|stocne|teplo|energie|poplatk/.test(folded)) return "services";
+        if (/n.?jemn.|splatnost|payment|invoice|faktur|rent/.test(folded)) return "payment";
+        if (/poru.{0,2}en|pokut|prodlen|sankc|\b1\s*%\s+z\s+dlu.{0,2}n/.test(folded)) return "sanctions";
+        if (/oprav|.{0,2}dr.{0,2}b|pred.{0,3}n|p.{0,2}ed.{0,3}n|stav\s+bytu|handover|repair/.test(folded)) return "handover";
+        if (/u.{0,2}iv|podnajem|podn.?jem|souhlas\s+pronaj.{0,2}matele|jine\s+osoby/.test(folded)) return "use";
+        if (/pronaj.{0,2}matel|n.?jemce|rodn.{0,2}\s+.{0,2}slo|email|bytem|party|parties/.test(folded)) return "parties";
         if (/odpov.{0,4}dnost|liability|damage/.test(folded)) return "liability";
-        if (/ml.{0,2}enlivost|confidential|nda/.test(folded)) return "confidentiality";
         if (/ukon.{0,3}en|vypov|termination/.test(folded)) return "termination";
         if (/osobn.{0,3}\s+.?daj|gdpr|personal\s+data/.test(folded)) return "data";
         return "general";
+      }
+
+      function clauseTitle(type) {
+        const labels = {
+          parties: ["Smluvní strany", "Parties"],
+          "lease-unit": ["Byt a příslušenství", "Unit and accessories"],
+          deposit: ["Kauce", "Deposit"],
+          services: ["Služby a zálohy", "Services and advances"],
+          payment: ["Nájemné a platby", "Rent and payments"],
+          sanctions: ["Sankce a prodlení", "Sanctions and default"],
+          handover: ["Předání, stav a opravy", "Handover, condition, repairs"],
+          use: ["Užívání bytu", "Use of the unit"],
+          liability: ["Odpovědnost", "Liability"],
+          termination: ["Výpověď / ukončení", "Termination"],
+          data: ["Osobní údaje", "Personal data"],
+          general: ["Relevantní část", "Relevant section"]
+        };
+        const pair = labels[type] || labels.general;
+        return state.lang === "cs" ? pair[0] : pair[1];
       }
 
       function severityLabel(level) {
@@ -1398,6 +1440,23 @@
       }
 
       function sectionDefinitions(contractType) {
+        if (contractType === "lease") {
+          return [
+            { id: "parties", required: true, cs: "Smluvní strany", en: "Parties", patterns: [/smluvn.?i?\s+stran|pronaj.{0,2}matel|n.?jemce|party|parties|between/] },
+            { id: "unit", required: true, cs: "Byt a příslušenství", en: "Unit and accessories", patterns: [/byt|jednotka|sklep|podlahov|adresa|balkon|nemovitost/] },
+            { id: "rent", required: true, cs: "Nájemné", en: "Rent", patterns: [/n.?jemn.|cena|rent/] },
+            { id: "services", required: true, cs: "Služby a zálohy", en: "Services and advances", patterns: [/slu.{0,2}b|z.{0,2}loh|vodne|stocne|teplo|energie|poplatk/] },
+            { id: "deposit", required: true, cs: "Kauce / jistota", en: "Deposit", patterns: [/kauce|jistota|deposit/] },
+            { id: "term", required: true, cs: "Doba nájmu", en: "Lease term", patterns: [/doba\s+trv.{0,4}n|doba\s+n.?jmu|u.{0,2}innost|platnost|urcitou|ur.{0,2}itou|neurcitou|neur.{0,2}itou|term|duration|effective/] },
+            { id: "termination", required: true, cs: "Výpověď / ukončení", en: "Termination", patterns: [/ukon.{0,3}en|vypov|v.{0,2}pov|odstoupen|termination|notice|withdraw/] },
+            { id: "handover", required: true, cs: "Předání a stav bytu", en: "Handover and condition", patterns: [/pred.{0,3}n|p.{0,2}ed.{0,3}n|predavac|p.{0,2}edavac|protokol|stav\s+bytu|vybaven|handover|condition/] },
+            { id: "repairs", required: true, cs: "Opravy a údržba", en: "Repairs and maintenance", patterns: [/oprav|udrzb|.{0,2}dr.{0,2}b|zavad|poskoz|repair|maintenance/] },
+            { id: "use", required: true, cs: "Užívání bytu", en: "Use of the unit", patterns: [/uziv|u.{0,2}iv|podnajem|podn.?jem|souhlas\s+pronaj.{0,2}matele|jine\s+osoby|use\s+of\s+the\s+unit/] },
+            { id: "sanctions", required: true, cs: "Sankce a prodlení", en: "Sanctions and default", patterns: [/smluvn.?i?\s+pokut|prodlen|urok|.{0,2}rok|sankc|porusen|poru.{0,2}en|dluzn|dlu.{0,2}n|\b1\s*%\s+z\s+dlu.{0,2}n|penalt|late\s+payment/] },
+            { id: "signatures", required: true, cs: "Podpisy / datum", en: "Signatures / date", patterns: [/podpis|podeps|datum|signature|signed|date/] }
+          ];
+        }
+
         const base = [
           { id: "parties", required: true, cs: "Smluvní strany", en: "Parties", patterns: [/smluvn.?i?\s+stran|mezi|party|parties|between/] },
           { id: "subject", required: true, cs: "Předmět plnění", en: "Subject / scope", patterns: [/p.{0,2}edm.{0,4}t|predm.{0,4}t|scope|subject|pln.{0,4}n|services|deliverables/] },
@@ -1480,13 +1539,20 @@
         return priorities;
       }
 
+      function missingCountText(count) {
+        if (state.lang !== "cs") return `${count} sections need verification.`;
+        if (count === 1) return "Chybí ověřit 1 část.";
+        if (count >= 2 && count <= 4) return `Chybí ověřit ${count} části.`;
+        return `Chybí ověřit ${count} částí.`;
+      }
+
       function buildProfessionalSummary(risk, findings, coverage) {
         const base = t(`summary${risk[0].toUpperCase()}${risk.slice(1)}`);
         const missingCount = coverage.filter((item) => item.required && !item.present).length;
         if (findings[0] && missingCount) {
           return state.lang === "cs"
-            ? `${base} Priorita: ${findings[0].title}. Chybí ověřit ${missingCount} částí.`
-            : `${base} Priority: ${findings[0].title}. ${missingCount} sections need verification.`;
+            ? `${base} Priorita: ${findings[0].title}. ${missingCountText(missingCount)}`
+            : `${base} Priority: ${findings[0].title}. ${missingCountText(missingCount)}`;
         }
         if (findings[0]) {
           return state.lang === "cs"
@@ -1495,8 +1561,8 @@
         }
         if (missingCount) {
           return state.lang === "cs"
-            ? `${base} Chybí ověřit ${missingCount} částí.`
-            : `${base} ${missingCount} sections need verification.`;
+            ? `${base} ${missingCountText(missingCount)}`
+            : `${base} ${missingCountText(missingCount)}`;
         }
         return base;
       }
@@ -1558,21 +1624,32 @@
 
       function buildQuestions(findings, contractType, coverage) {
         const base =
-          state.lang === "cs"
-            ? [
-                "Co přesně se stane při porušení smlouvy?",
-                "Jak lze smlouvu ukončit bez nepřiměřených nákladů?",
-                "Které přílohy a částky musí být doplněné před podpisem?"
-              ]
-            : [
-                "What exactly happens after a breach?",
-                "How can the contract be terminated without disproportionate cost?",
-                "Which attachments and amounts must be completed before signing?"
-              ];
+          contractType === "lease"
+            ? state.lang === "cs"
+              ? [
+                  "Kdy a za jakých podmínek se vrací kauce?",
+                  "Jak se vyúčtují služby a které platby jsou paušální?",
+                  "Jaká je výpovědní lhůta a co se stane při prodlení?",
+                  "Kdo hradí opravy, běžnou údržbu a škody v bytě?"
+                ]
+              : [
+                  "When and under what conditions is the deposit returned?",
+                  "How are services settled and which payments are fixed?",
+                  "What is the notice period and what happens after late payment?",
+                  "Who pays for repairs, routine maintenance, and damage?"
+                ]
+            : state.lang === "cs"
+              ? [
+                  "Co přesně se stane při porušení smlouvy?",
+                  "Jak lze smlouvu ukončit bez nepřiměřených nákladů?",
+                  "Které přílohy a částky musí být doplněné před podpisem?"
+                ]
+              : [
+                  "What exactly happens after a breach?",
+                  "How can the contract be terminated without disproportionate cost?",
+                  "Which attachments and amounts must be completed before signing?"
+                ];
 
-        if (contractType === "lease") {
-          base.unshift(state.lang === "cs" ? "Jak se řeší kauce, opravy a předání?" : "How are deposit, repairs, and handover handled?");
-        }
         if (contractType === "employment") {
           base.unshift(state.lang === "cs" ? "Sedí pracovní doba, mzda a konkurenční omezení?" : "Do working time, salary, and non-compete limits fit?");
         }
@@ -1602,6 +1679,11 @@
         if (risk === "high") return t("high");
         if (risk === "medium") return t("medium");
         return t("low");
+      }
+
+      function questionsTitle(type) {
+        if (type === "lease") return state.lang === "cs" ? "Otázky pro pronajímatele" : "Questions for the landlord";
+        return t("questions");
       }
 
       function renderReport(report) {
@@ -1643,14 +1725,18 @@
         const requiredCoverage = report.coverage.filter((item) => item.required);
         const foundRequired = requiredCoverage.filter((item) => item.present).length;
         const missingCoverage = requiredCoverage.filter((item) => !item.present);
-        const optionalFound = report.coverage.filter((item) => !item.required && item.present).slice(0, 3);
+        const foundLabels = requiredCoverage
+          .filter((item) => item.present)
+          .map((item) => item.label)
+          .slice(0, 8)
+          .join(", ");
         const coverageRows = [
           {
             label: `${t("present")}: ${foundRequired}/${requiredCoverage.length}`,
             detail:
               state.lang === "cs"
-                ? "Základní části smlouvy nalezené v textu."
-                : "Core contract sections found in the text."
+                ? `Nalezené části: ${foundLabels || "-"}`
+                : `Found sections: ${foundLabels || "-"}`
           },
           ...missingCoverage.slice(0, 6).map((item) => ({
             label: `${t("missing")}: ${item.label}`,
@@ -1658,13 +1744,6 @@
               state.lang === "cs"
                 ? "Před podpisem ověřte nebo doplňte."
                 : "Verify or add before signing."
-          })),
-          ...optionalFound.map((item) => ({
-            label: `${t("present")}: ${item.label}`,
-            detail:
-              state.lang === "cs"
-                ? "Doplňková část nalezená v textu."
-                : "Additional section found in the text."
           }))
         ];
         const coverage = coverageRows
@@ -1712,7 +1791,7 @@
               .join("") || `<div class="mini">-</div>`}
           </div>
 
-          <h3 class="section-title">${escapeHtml(t("questions"))}</h3>
+          <h3 class="section-title">${escapeHtml(questionsTitle(report.type))}</h3>
           <div class="questions">
             ${report.questions.map((question) => `<div class="mini">${escapeHtml(question)}</div>`).join("")}
           </div>
