@@ -1156,7 +1156,7 @@
           id: "personal-guarantee",
           area: "security",
           level: 17,
-          pattern: /rucitel|rucen|smenka|osobn.{0,3}\s+zaruk|bankovn.{0,3}\s+zaruk|zajistovac.{0,4}\s+prevod|personal\s+guarantee|promissory\s+note|security\s+interest/gi,
+          pattern: /\b(?:rucitel|ruceni|rucitelsk|ruci|smenka|osobn.{0,3}\s+zaruk|bankovn.{0,3}\s+zaruk|zajistovac.{0,4}\s+prevod|personal\s+guarantee|promissory\s+note|security\s+interest)\b/gi,
           cs: ["Ručení nebo zajištění", "Ověřte, kdo ručí, do jaké výše a kdy závazek zaniká."],
           en: ["Guarantee or security", "Verify who guarantees, the cap, and when the security ends."]
         },
@@ -2047,6 +2047,20 @@
         return state.lang === "cs" ? pair[0] : pair[1];
       }
 
+      function isLikelyReferenceNumber({ amount, raw, hasCurrency, context }) {
+        const folded = foldText(context);
+        const compact = String(raw || "").replace(/\D/g, "");
+
+        if (!hasCurrency && amount !== null && amount > 1000000) return true;
+        if (!hasCurrency && /^0\d{3,}$/.test(compact)) return true;
+        if (/telefon|phone|tel\.?|\+420|e-mail|email/.test(folded)) return true;
+        if (/ucet|cislo\s+uctu|bank|iban|variabiln|symbol|vs\b|csob|veden.{0,3}\s+u/.test(folded)) return true;
+        if (/§\s*$/.test(context.slice(0, Math.max(0, context.indexOf(raw))))) return true;
+        if (/§\s*\d{3,5}|obcanskeho\s+zakoniku|civil\s+code|section\s+\d{3,5}/.test(folded)) return true;
+
+        return false;
+      }
+
       function extractNumbersAndDates(text) {
         const items = [];
         const seen = new Set();
@@ -2062,6 +2076,7 @@
           const context = `${before}${after}`;
           if (/rodn.{0,3}\s+.{0,3}slo|birth\s+number|personal\s+id/i.test(foldText(context))) continue;
           const kind = contextKindBeforeAfter(before, after);
+          if (isLikelyReferenceNumber({ amount, raw, hasCurrency, context })) continue;
           if (!hasCurrency && amount !== null && amount < 1000) continue;
           if (!hasCurrency && kind === "amount") continue;
           if (amount !== null && amount >= 1900 && amount <= 2100 && !hasCurrency && kind === "amount") continue;
@@ -2723,17 +2738,17 @@
           <h3 class="section-title">${escapeHtml(t("nextStep"))}</h3>
           <div class="mini"><strong>${escapeHtml(report.verdict.next)}</strong>${escapeHtml(report.summary)}</div>
 
+          <h3 class="section-title">${escapeHtml(t("priorities"))}</h3>
+          <div class="priority-list">${priorities}</div>
+
           <h3 class="section-title">${escapeHtml(t("moneyDates"))}</h3>
           <div class="number-grid">${numbers}</div>
 
-          <h3 class="section-title">${escapeHtml(t("legalBenchmarks"))}</h3>
-          <div class="benchmark-list">${benchmarks}</div>
-
-          <h3 class="section-title">${escapeHtml(t("issueBoard"))}</h3>
-          <div class="issue-list">${issues}</div>
-
-          <h3 class="section-title">${escapeHtml(t("proposedEdits"))}</h3>
-          <div class="edit-list">${edits}</div>
+          ${
+            report.benchmarks.length
+              ? `<h3 class="section-title">${escapeHtml(t("legalBenchmarks"))}</h3><div class="benchmark-list">${benchmarks}</div>`
+              : ""
+          }
 
           <h3 class="section-title">${escapeHtml(t("negotiationPack"))}</h3>
           <div class="draft-box">${escapeHtml(report.negotiationText).replace(/\n/g, "<br>")}</div>
@@ -2741,24 +2756,13 @@
             <button type="button" class="btn" id="copyNegotiation">${escapeHtml(t("copyNegotiation"))}</button>
           </div>
 
-          <h3 class="section-title">${escapeHtml(t("scoreReasons"))}</h3>
-          <div class="score-reasons">${scoreReasons}</div>
-
-          <h3 class="section-title">${escapeHtml(t("findings"))}</h3>
-          <div class="findings">${findings}</div>
-
           <h3 class="section-title">${escapeHtml(missingCoverage.length ? t("coverage") : t("contentCheck"))}</h3>
           <div class="coverage">${coverage}</div>
 
-          <h3 class="section-title">${escapeHtml(t("clauses"))}</h3>
-          <div class="clauses">
-            ${report.clauses
-              .map(
-                (clause) =>
-                  `<div class="mini"><strong>${escapeHtml(clause.title)}</strong>${escapeHtml(clause.excerpt)}</div>`
-              )
-              .join("") || `<div class="mini">-</div>`}
-          </div>
+          <details class="mini">
+            <summary>${escapeHtml(t("findings"))}</summary>
+            <div class="findings">${findings}</div>
+          </details>
 
           <h3 class="section-title">${escapeHtml(questionsTitle(report.type))}</h3>
           <div class="questions">
@@ -2793,29 +2797,17 @@
           report.verdict.summary,
           `${t("nextStep")}: ${report.verdict.next}`,
           "",
+          t("priorities"),
+          ...report.priorities.map((priority) => `- ${priority.title}: ${priority.detail}`),
+          "",
           t("moneyDates"),
           ...(report.extracts.length ? report.extracts.map((item) => `- ${item.label}: ${item.value} (${item.quote})`) : [`- ${t("noNumbers")}`]),
           "",
           t("legalBenchmarks"),
           ...(report.benchmarks.length ? report.benchmarks.map((item) => `- ${item.title}: ${item.detail}`) : [`- ${t("noBenchmarks")}`]),
           "",
-          t("issueBoard"),
-          ...(report.issues.length ? report.issues.map((issue) => `- ${issue.title}: ${issue.ask}`) : [`- ${t("noFindings")}`]),
-          "",
-          t("proposedEdits"),
-          ...(report.issues.length ? report.issues.slice(0, 4).map((issue) => `- ${issue.title}: ${issue.draft}`) : [`- ${t("noPriorities")}`]),
-          "",
           t("negotiationPack"),
           report.negotiationText,
-          "",
-          t("scoreReasons"),
-          ...(report.scoreReasons.length ? report.scoreReasons.map((reason) => `- ${reason.label}: ${reason.detail}`) : [`- ${t("noScoreReasons")}`]),
-          "",
-          t("priorities"),
-          ...report.priorities.map((priority) => `- ${priority.title}: ${priority.detail}`),
-          "",
-          t("actionsTitle"),
-          ...report.actions.map((action) => `- ${action}`),
           "",
           t("findings"),
           ...report.findings.map(
